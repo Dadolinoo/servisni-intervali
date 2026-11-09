@@ -1,0 +1,1147 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Servisni Intervali</title>
+  <meta name="description" content="Evidencija vozila, servisa, dokumenata i podsjetnika za gume">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0f172a">
+  <meta name="color-scheme" content="dark">
+  <!-- iPhone / Safari: Dodaj na početni zaslon -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Servisni Intervali">
+  <meta name="format-detection" content="telephone=no">
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon.png">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <style>
+    :root {
+      --sat: env(safe-area-inset-top, 0px);
+      --sab: env(safe-area-inset-bottom, 0px);
+      --sal: env(safe-area-inset-left, 0px);
+      --sar: env(safe-area-inset-right, 0px);
+    }
+    html { background: #0f172a; -webkit-text-size-adjust: 100%; }
+    body { background: #0f172a; color: #e2e8f0; padding-left: var(--sal); padding-right: var(--sar); -webkit-tap-highlight-color: transparent; overscroll-behavior-y: none; }
+    [x-cloak] { display: none !important; }
+    /* Safe area (notch / Dynamic Island / home indikator) */
+    .safe-header { padding-top: calc(1rem + var(--sat)); }
+    .safe-main { padding-bottom: calc(8rem + var(--sab)); }
+    .safe-sheet { padding-bottom: calc(1rem + var(--sab)); }
+    .safe-splash-text { bottom: calc(4rem + var(--sab)); }
+    /* Moderni glass gumbi u headeru */
+    .glass-btn { width: 40px; height: 40px; border-radius: 9999px; display: inline-flex; align-items: center; justify-content: center;
+      background: rgba(30,41,59,0.6); border: 1px solid rgba(148,163,184,0.18); color: #e2e8f0;
+      -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); box-shadow: 0 4px 14px rgba(0,0,0,0.25); }
+    .glass-btn-primary { background: #3b82f6; border-color: rgba(147,197,253,0.4); color: #fff; box-shadow: 0 6px 18px rgba(59,130,246,0.35); }
+    .glass-btn:active { animation: none; transform: scale(0.9); }
+/*__NAV_CSS__*/
+    .card { background: #1e293b; border-radius: 16px; }
+    .btn-primary { background: #3b82f6; }
+    .btn-primary:hover { background: #2563eb; }
+    @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+    @keyframes pulse-glow { 0%,100% { opacity: 0.15; } 50% { opacity: 0.35; } }
+    .float-icon { animation: float 3s ease-in-out infinite; }
+    .glow-bg { animation: pulse-glow 4s ease-in-out infinite; }
+    @keyframes splashFade { 0% { opacity: 1; } 75% { opacity: 1; } 100% { opacity: 0; visibility: hidden; } }
+    @keyframes lightsOn { 0% { filter: brightness(0.25); } 100% { filter: brightness(1); } }
+    @keyframes textAppear { 0% { opacity: 0; transform: translateY(30px); } 100% { opacity: 1; transform: translateY(0); } }
+    .splash { animation: splashFade 3.8s ease forwards; }
+    .splash-bg { animation: lightsOn 2.8s ease forwards; }
+    .splash-text { animation: textAppear 1.4s ease 1.2s forwards; opacity: 0; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes imgReveal { from { opacity: 0; transform: scale(1.08); filter: blur(4px); } to { opacity: 1; transform: scale(1); filter: blur(0); } }
+    img { animation: imgReveal 0.8s ease forwards; }
+    @keyframes letterFade { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes btnPop { 0% { transform: scale(1); } 50% { transform: scale(0.94); } 100% { transform: scale(1); } }
+    h1, h2, h3, .font-bold, .text-xl, .text-2xl, .text-3xl, .text-4xl {
+      animation: letterFade 0.55s ease forwards;
+    }
+    .card p, .card div, span, label {
+      animation: letterFade 0.45s ease 0.08s forwards;
+    }
+    button {
+      transition: all 0.18s ease;
+    }
+    button:active {
+      animation: btnPop 0.25s ease;
+      transform: scale(0.95);
+    }
+    input, textarea, select { transition: border-color 0.2s ease, box-shadow 0.2s ease; }
+    input:focus, textarea:focus, select:focus { box-shadow: 0 0 0 2px rgba(59,130,246,0.4); }
+    /* iOS: 16px u poljima sprječava automatski zoom */
+    input, textarea, select { font-size: 16px; }
+    h1, .text-2xl { font-size: 1.35rem !important; }
+    .text-4xl { font-size: 1.6rem !important; }
+    .text-3xl { font-size: 1.3rem !important; }
+    .text-xl { font-size: 1.1rem !important; }
+  </style>
+</head>
+<body class="font-sans">
+<!-- Splash / Opening animation - Car in dark garage -->
+<div class="splash fixed inset-0 z-50 bg-black">
+  <div class="splash-bg absolute inset-0 bg-cover bg-center" 
+       style="background-image: url('img/splash.jpg'); filter: brightness(0.4);"></div>
+  <div class="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent"></div>
+  <div class="splash-text safe-splash-text absolute left-0 right-0 text-center px-6">
+    <div class="text-4xl font-bold text-white drop-shadow-lg">Servisni Intervali</div>
+    <div class="text-sm text-slate-300 mt-2">Evidencija vozila</div>
+  </div>
+</div>
+
+<div x-data="app()" x-init="init()" class="min-h-screen safe-main">
+
+  <!-- Header -->
+  <header class="safe-header px-4 pb-3 flex justify-between items-center sticky top-0 bg-[#0f172a]/80 backdrop-blur-xl z-10">
+    <h1 class="text-2xl font-bold" x-text="headerTitle()"></h1>
+    <div class="flex gap-2">
+      <button @click="downloadBackup()" class="glass-btn" title="Preuzmi backup" aria-label="Preuzmi backup">{{HSVG:DL}}</button>
+      <button @click="showLang = true" class="glass-btn" title="Jezik" aria-label="Jezik">{{HSVG:GLOBE}}</button>
+      <button @click="newVehicle()" class="glass-btn glass-btn-primary header-plus" title="Novo vozilo" aria-label="Novo vozilo">{{HSVG:PLUS}}</button>
+    </div>
+  </header>
+
+  <!-- Banner: nova verzija dostupna -->
+  <div x-show="updateAvailable && !updateDismissed" x-cloak class="mx-4 mb-3 card p-3 border border-blue-500/40 bg-blue-500/10 flex items-center gap-3">
+    <span class="text-blue-400">{{HSVG:REFRESH}}</span>
+    <div class="flex-1 text-sm" x-text="'Dostupna je nova verzija ' + (remoteVersion || '')"></div>
+    <button @click="dismissUpdate()" class="px-3 py-2 rounded-xl text-sm text-slate-300 bg-slate-700/60">Kasnije</button>
+    <button @click="applyUpdate()" :disabled="refreshing" class="btn-primary px-3 py-2 rounded-xl text-sm" x-text="refreshing ? 'Ažuriram…' : 'Ažuriraj'"></button>
+  </div>
+
+  <!-- Global reminders -->
+  <div x-show="currentView === 'home'" class="px-4 space-y-3 mb-4">
+    <!-- Tire reminder -->
+    <div x-show="showTireReminder()" class="relative overflow-hidden rounded-2xl border border-amber-500/40 shadow-xl min-h-[120px]" 
+         :style="reminderBackgroundStyle()">
+      <div class="absolute -top-2 -right-2 text-6xl opacity-40 pointer-events-none float-icon" x-text="tireReminderIcon()"></div>
+      <div class="p-4 relative">
+        <div class="flex items-center gap-2 mb-1">
+          <span class="text-2xl" x-text="tireReminderIcon()"></span>
+          <span class="font-bold text-white drop-shadow">Podsjetnik za gume</span>
+        </div>
+        <div class="text-white text-sm drop-shadow" x-text="tireReminderText()"></div>
+      </div>
+    </div>
+
+    <!-- Registration & Insurance reminders -->
+    <template x-for="v in vehicles" :key="'rem-'+v.id">
+      <div>
+        <div x-show="daysUntil(v.registrationDate) <= 30 && daysUntil(v.registrationDate) >= 0" 
+             class="card p-3 border border-yellow-600/50 bg-yellow-900/20">
+          <div class="text-yellow-300 font-semibold">⚠️ Registracija ističe</div>
+          <div class="text-sm" x-text="v.brand + ' ' + v.model + ' — za ' + daysUntil(v.registrationDate) + ' dana'"></div>
+        </div>
+        <div x-show="daysUntil(v.insuranceDate) <= 30 && daysUntil(v.insuranceDate) >= 0" 
+             class="card p-3 border border-red-600/50 bg-red-900/20 mt-2">
+          <div class="text-red-300 font-semibold">🛡️ Osiguranje ističe</div>
+          <div class="text-sm" x-text="v.brand + ' ' + v.model + ' — za ' + daysUntil(v.insuranceDate) + ' dana'"></div>
+        </div>
+      </div>
+    </template>
+  </div>
+
+  <!-- Home: Vehicles -->
+  <div x-show="currentView === 'home'" class="page p-4 space-y-5">
+    <template x-for="v in vehicles" :key="v.id">
+      <div class="card overflow-hidden cursor-pointer shadow-lg" @click="openVehicle(v)">
+        <div class="relative">
+          <template x-if="hasImage(v)">
+            <img :src="v.photo || defaultPhoto(v.brand, v.model)" class="w-full h-48 object-cover" alt="">
+          </template>
+          <template x-if="!hasImage(v)">
+            <div class="w-full h-48 flex items-center justify-center bg-gradient-to-br from-slate-700 to-slate-900 text-7xl" x-text="typeIcon(v.type)"></div>
+          </template>
+          <div class="absolute top-3 left-3 bg-black/60 backdrop-blur-sm rounded-full px-3 py-1 text-xs font-semibold" x-text="typeIcon(v.type) + ' ' + (v.type || 'Automobil')"></div>
+          <div class="absolute top-3 right-3 bg-black/60 backdrop-blur-sm rounded-full px-3 py-1 text-xs font-semibold" x-text="v.brand"></div>
+        </div>
+        <div class="p-4">
+          <div class="text-2xl font-bold" x-text="v.brand + ' ' + v.model"></div>
+          <div class="text-3xl font-bold text-blue-400 mt-1" x-text="usageText(v)"></div>
+          <div class="mt-3 flex justify-between text-sm text-slate-400">
+            <div>
+              <div class="text-xs">Šasija</div>
+              <div class="font-mono text-xs" x-text="v.vin || '—'"></div>
+            </div>
+            <div class="text-right">
+              <div class="text-xs">Godište</div>
+              <div x-text="v.year || '—'"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </template>
+    <div x-show="vehicles.length === 0" class="text-center py-12 text-slate-400">
+      <p x-text="t('noVehicles')"></p>
+      <button @click="newVehicle()" class="mt-4 btn-primary px-6 py-3 rounded-xl">Dodaj vozilo</button>
+    </div>
+  </div>
+
+  <!-- Add / Edit Vehicle -->
+  <div x-show="currentView === 'addVehicle'" class="p-4">
+    <h2 class="text-xl font-bold mb-4" x-text="editingVehicle ? 'Uredi vozilo' : t('addVehicle')"></h2>
+    <form @submit.prevent="saveVehicle" class="space-y-4">
+      <!-- Tip vozila -->
+      <div>
+        <div class="text-sm text-slate-400 mb-2">Tip vozila</div>
+        <div class="grid grid-cols-4 gap-2">
+          <template x-for="vt in vehicleTypes" :key="vt.value">
+            <button type="button" @click="form.type = vt.value"
+                    class="flex flex-col items-center justify-center gap-1 py-3 rounded-xl border"
+                    :class="form.type === vt.value ? 'bg-blue-500/20 border-blue-500 text-white' : 'bg-[#1e293b] border-transparent text-slate-300'">
+              <span class="text-2xl" x-text="vt.icon"></span>
+              <span class="text-[11px] font-medium" x-text="vt.value"></span>
+            </button>
+          </template>
+        </div>
+      </div>
+      <input x-model="form.brand" placeholder="Marka (npr. BMW)" class="w-full p-3 bg-[#1e293b] rounded-xl" required>
+      <input x-model="form.model" placeholder="Model (npr. 320d)" class="w-full p-3 bg-[#1e293b] rounded-xl" required>
+      <input x-model="form.year" type="number" inputmode="numeric" placeholder="Godište (npr. 2020)" class="w-full p-3 bg-[#1e293b] rounded-xl">
+      <input x-model="form.vin" :placeholder="isCar(form.type) ? 'Broj šasije (VIN) *' : 'Broj šasije / serijski broj (opcionalno)'" :required="isCar(form.type)" class="w-full p-3 bg-[#1e293b] rounded-xl font-mono">
+      <input x-model.number="form.mileage" type="number" inputmode="numeric" :placeholder="isCar(form.type) ? 'Kilometraža' : 'Kilometraža (opcionalno)'" class="w-full p-3 bg-[#1e293b] rounded-xl">
+      <input x-show="!isCar(form.type)" x-model.number="form.workHours" type="number" inputmode="decimal" step="0.1" placeholder="Radni sati (h)" class="w-full p-3 bg-[#1e293b] rounded-xl">
+      <label class="block">
+        <span class="block text-sm text-slate-400 mb-1">Registracija vrijedi do</span>
+        <input x-model="form.registrationDate" type="date" class="w-full p-3 bg-[#1e293b] rounded-xl">
+      </label>
+      <label class="block">
+        <span class="block text-sm text-slate-400 mb-1">Osiguranje vrijedi do</span>
+        <input x-model="form.insuranceDate" type="date" class="w-full p-3 bg-[#1e293b] rounded-xl">
+      </label>
+      <input x-model="form.tireSize" placeholder="Dimenzije guma (npr. 225/45 R17)" class="w-full p-3 bg-[#1e293b] rounded-xl">
+      <select x-model="form.tireType" class="w-full p-3 bg-[#1e293b] rounded-xl">
+        <option value="">Tip gume</option>
+        <option value="Ljetne">Ljetne</option>
+        <option value="Zimske">Zimske</option>
+        <option value="Cjelogodišnje">Cjelogodišnje</option>
+      </select>
+      <input x-model="form.tireDOT" placeholder="DOT (npr. 2523)" class="w-full p-3 bg-[#1e293b] rounded-xl">
+      <input x-model="form.tirePressure" placeholder="Tlak u gumama (npr. 2.3 / 2.1 bar)" class="w-full p-3 bg-[#1e293b] rounded-xl">
+      <input x-model="form.tireTorqueAlu" placeholder="Moment stezanja Aluminijske (npr. 120 Nm)" class="w-full p-3 bg-[#1e293b] rounded-xl">
+      <input x-model="form.tireTorqueSteel" placeholder="Moment stezanja Čelične (npr. 110 Nm)" class="w-full p-3 bg-[#1e293b] rounded-xl">
+      <textarea x-model="form.notes" placeholder="Ostale bilješke" class="w-full p-3 bg-[#1e293b] rounded-xl h-20"></textarea>
+      <div>
+        <label class="block mb-2">Fotografija vozila (opcionalno)</label>
+        <input type="file" accept="image/*" @change="handlePhoto($event)" class="w-full text-sm">
+        <img x-show="form.photo" :src="form.photo" class="mt-2 h-32 object-cover rounded-xl">
+      </div>
+      <div class="flex gap-2">
+        <button type="button" @click="cancelVehicleForm()" class="flex-1 py-3 bg-slate-700 rounded-xl">Odustani</button>
+        <button type="submit" class="flex-1 py-3 btn-primary rounded-xl">Spremi</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Vehicle Detail -->
+  <div x-show="currentView === 'vehicle'" class="page p-4">
+    <div class="flex justify-between items-center mb-4">
+      <button @click="currentView = 'home'" class="text-blue-400">← Natrag</button>
+      <button @click="editVehicle(selected)" class="text-blue-400 text-sm">✏️ Uredi vozilo</button>
+    </div>
+    <template x-if="selected">
+      <div>
+        <template x-if="hasImage(selected)">
+          <img :src="selected.photo || defaultPhoto(selected.brand, selected.model)" class="w-full h-48 object-cover rounded-2xl mb-4">
+        </template>
+        <template x-if="!hasImage(selected)">
+          <div class="w-full h-48 rounded-2xl mb-4 flex items-center justify-center bg-gradient-to-br from-slate-700 to-slate-900 text-7xl" x-text="typeIcon(selected.type)"></div>
+        </template>
+        <div class="text-sm text-slate-400" x-text="typeIcon(selected.type) + ' ' + (selected.type || 'Automobil')"></div>
+        <h2 class="text-2xl font-bold" x-text="selected.brand + ' ' + selected.model"></h2>
+        <div class="text-4xl font-bold text-blue-400 my-2" x-text="usageText(selected)"></div>
+        <div x-show="!isCar(selected.type) && hasHours(selected) && Number(selected.mileage) > 0" class="text-sm text-slate-400 -mt-1 mb-2" x-text="fmtNum(selected.mileage) + ' km'"></div>
+
+        <!-- Total costs -->
+        <div class="card p-4 mb-4">
+          <div class="text-sm text-slate-400">Ukupni troškovi servisa</div>
+          <div class="text-3xl font-bold text-blue-400" x-text="totalCosts() + ' €'"></div>
+          <div class="text-xs text-slate-500" x-text="selected.services.length + ' servisa'"></div>
+        </div>
+
+        <div class="card p-4 mb-4">
+          <div class="text-sm text-slate-400">Broj šasije</div>
+          <div class="font-mono text-lg" x-text="selected.vin || '—'"></div>
+          <button @click="shareVin(selected)" class="mt-3 w-full btn-primary py-3 rounded-xl flex items-center justify-center gap-2">
+            📤 Podijeli šasiju
+          </button>
+          <button @click="exportPDF()" class="mt-2 w-full bg-slate-700 py-3 rounded-xl flex items-center justify-center gap-2">
+            📄 Izvezi u PDF
+          </button>
+        </div>
+
+        <!-- Tire data table -->
+        <div class="card p-4 mb-4">
+          <h3 class="font-semibold mb-3">Gume</h3>
+          <table class="w-full text-sm">
+            <tr class="border-b border-slate-700">
+              <td class="py-2 text-slate-400">Dimenzije</td>
+              <td class="py-2 text-right" x-text="selected.tireSize || '—'"></td>
+            </tr>
+            <tr class="border-b border-slate-700">
+              <td class="py-2 text-slate-400">Tip</td>
+              <td class="py-2 text-right" x-text="selected.tireType || '—'"></td>
+            </tr>
+            <tr class="border-b border-slate-700">
+              <td class="py-2 text-slate-400">DOT</td>
+              <td class="py-2 text-right" x-text="selected.tireDOT || '—'"></td>
+            </tr>
+            <tr class="border-b border-slate-700">
+              <td class="py-2 text-slate-400">Tlak</td>
+              <td class="py-2 text-right" x-text="selected.tirePressure || '—'"></td>
+            </tr>
+            <tr class="border-b border-slate-700">
+              <td class="py-2 text-slate-400">Moment stezanja Aluminijske</td>
+              <td class="py-2 text-right" x-text="selected.tireTorqueAlu || '—'"></td>
+            </tr>
+            <tr>
+              <td class="py-2 text-slate-400">Moment stezanja Čelične</td>
+              <td class="py-2 text-right" x-text="selected.tireTorqueSteel || '—'"></td>
+            </tr>
+          </table>
+          <div x-show="selected.notes" class="mt-3 pt-3 border-t border-slate-700 text-sm text-slate-300" x-text="selected.notes"></div>
+        </div>
+
+        <!-- Services -->
+        <div class="flex justify-between items-center mb-2">
+          <h3 class="text-lg font-semibold">Servisi</h3>
+          <button @click="newService()" class="text-blue-400 text-sm">+ Dodaj</button>
+        </div>
+        <div class="space-y-2 mb-6">
+          <template x-for="s in selected.services" :key="s.id">
+            <div class="card p-3 cursor-pointer" @click="viewService(s)">
+              <div class="flex justify-between">
+                <span x-text="s.type === 'small' ? 'Mali servis' : 'Veliki servis'"></span>
+                <span class="font-bold" x-text="s.total + ' €'"></span>
+              </div>
+              <div class="text-sm text-slate-400" x-text="fmtDate(s.date) + ' • ' + serviceUsage(s)"></div>
+            </div>
+          </template>
+        </div>
+
+        <!-- Documents -->
+        <div class="flex justify-between items-center mb-2">
+          <h3 class="text-lg font-semibold">Dokumenti</h3>
+          <button @click="currentView = 'addDocument'" class="text-blue-400 text-sm">+ Dodaj</button>
+        </div>
+        <div class="space-y-2">
+          <template x-for="d in selected.documents" :key="d.id">
+            <div class="card p-3" :class="d.file ? 'cursor-pointer' : ''" @click="openDocument(d)">
+              <div x-text="d.name"></div>
+              <div class="text-sm text-slate-400" x-text="d.expiry ? 'Ističe: ' + d.expiry : ''"></div>
+            </div>
+          </template>
+        </div>
+      </div>
+    </template>
+  </div>
+
+  <!-- Add Service -->
+  <div x-show="currentView === 'addService'" class="p-4">
+    <button @click="currentView = 'vehicle'" class="mb-4 text-blue-400">← Natrag</button>
+    <h2 class="text-xl font-bold mb-4">Novi servis</h2>
+    <div class="flex gap-2 mb-4">
+      <button @click="serviceForm.type = 'small'" :class="serviceForm.type === 'small' ? 'btn-primary' : 'bg-slate-700'" class="flex-1 py-2 rounded-xl">Mali servis</button>
+      <button @click="serviceForm.type = 'big'" :class="serviceForm.type === 'big' ? 'btn-primary' : 'bg-slate-700'" class="flex-1 py-2 rounded-xl">Veliki servis</button>
+    </div>
+    <input x-model="serviceForm.date" type="date" class="w-full p-3 bg-[#1e293b] rounded-xl mb-3">
+    <input x-model.number="serviceForm.mileage" type="number" inputmode="numeric" :placeholder="selected && !isCar(selected.type) ? 'Kilometraža (opcionalno)' : 'Kilometraža'" class="w-full p-3 bg-[#1e293b] rounded-xl mb-3">
+    <input x-show="selected && !isCar(selected.type)" x-model.number="serviceForm.workHours" type="number" inputmode="decimal" step="0.1" placeholder="Radni sati (h)" class="w-full p-3 bg-[#1e293b] rounded-xl mb-3">
+    <div class="mb-1"></div>
+
+    <div class="space-y-2 mb-4">
+      <template x-for="(item, i) in serviceForm.items" :key="i">
+        <div class="flex gap-2">
+          <input x-model="item.name" placeholder="Stavka" class="flex-1 min-w-0 p-2 bg-[#1e293b] rounded">
+          <input x-model.number="item.qty" type="number" inputmode="decimal" placeholder="Kol" class="w-16 p-2 bg-[#1e293b] rounded">
+          <input x-model.number="item.price" type="number" inputmode="decimal" step="0.01" placeholder="Cijena" class="w-20 p-2 bg-[#1e293b] rounded">
+          <button type="button" @click="serviceForm.items.splice(i,1)" class="text-red-400">✕</button>
+        </div>
+      </template>
+    </div>
+    <button type="button" @click="serviceForm.items.push({name:'', qty:1, price:0})" class="w-full py-2 border border-dashed border-slate-600 rounded-xl mb-4">+ Dodaj stavku</button>
+
+    <div class="text-right text-2xl font-bold text-blue-400 mb-4">
+      Ukupno: <span x-text="calculateTotal() + ' €'"></span>
+    </div>
+    <button @click="saveService" class="w-full py-3 btn-primary rounded-xl">Spremi servis</button>
+  </div>
+
+  <!-- Add Document -->
+  <div x-show="currentView === 'addDocument'" class="page p-4">
+    <button @click="currentView = 'vehicle'" class="mb-4 text-blue-400">← Natrag</button>
+    <h2 class="text-xl font-bold mb-4">Novi dokument</h2>
+    <form @submit.prevent="saveDocument" class="space-y-4">
+      <input x-model="docForm.name" placeholder="Naziv (npr. Prometna dozvola)" class="w-full p-3 bg-[#1e293b] rounded-xl" required>
+      <select x-model="docForm.type" class="w-full p-3 bg-[#1e293b] rounded-xl">
+        <option value="registration">Registracija</option>
+        <option value="insurance">Osiguranje</option>
+        <option value="other">Ostalo</option>
+      </select>
+      <input x-model="docForm.expiry" type="date" class="w-full p-3 bg-[#1e293b] rounded-xl">
+      <input type="file" accept="image/*,.pdf" @change="handleDocFile($event)" class="w-full">
+      <button type="submit" class="w-full py-3 btn-primary rounded-xl">Spremi dokument</button>
+    </form>
+  </div>
+
+  <!-- Tab: Svi servisi -->
+  <div x-show="currentView === 'services'" class="page p-4">
+    <div class="text-sm text-slate-400 mb-3" x-show="allServices().length" x-text="allServices().length + ' servisa • ukupno ' + allServicesTotal() + ' €'"></div>
+    <div class="space-y-2">
+      <template x-for="row in allServices()" :key="row.vehicle.id + '-' + row.service.id">
+        <div class="card p-3 flex items-center gap-3 cursor-pointer" @click="openServiceFromList(row)">
+          <div class="w-10 h-10 rounded-full bg-blue-500/15 text-blue-400 flex items-center justify-center shrink-0">{{HSVG:WRENCH}}</div>
+          <div class="flex-1 min-w-0">
+            <div class="flex justify-between gap-2">
+              <span class="font-semibold truncate" x-text="row.service.type === 'small' ? 'Mali servis' : 'Veliki servis'"></span>
+              <span class="font-bold text-blue-400 shrink-0" x-text="row.service.total + ' €'"></span>
+            </div>
+            <div class="text-sm text-slate-300 truncate" x-text="typeIcon(row.vehicle.type) + ' ' + row.vehicle.brand + ' ' + row.vehicle.model"></div>
+            <div class="text-xs text-slate-400" x-text="fmtDate(row.service.date) + ' • ' + serviceUsage(row.service)"></div>
+          </div>
+          <span class="text-slate-500 shrink-0">{{HSVG:CHEV}}</span>
+        </div>
+      </template>
+    </div>
+    <div x-show="allServices().length === 0" class="text-center py-16 text-slate-400">
+      <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-[#1e293b] flex items-center justify-center text-slate-500">{{SVG:WRENCH}}</div>
+      <p>Još nema evidentiranih servisa.</p>
+      <p class="text-sm text-slate-500 mt-1">Otvori vozilo i dodaj prvi servis.</p>
+    </div>
+  </div>
+
+  <!-- Tab: Svi dokumenti -->
+  <div x-show="currentView === 'documents'" class="page p-4">
+    <div class="space-y-2">
+      <template x-for="row in allDocuments()" :key="row.vehicle.id + '-' + row.doc.id">
+        <div class="card p-3 flex items-center gap-3" :class="row.doc.file ? 'cursor-pointer' : ''" @click="openDocument(row.doc)">
+          <div class="w-10 h-10 rounded-full bg-blue-500/15 text-blue-400 flex items-center justify-center shrink-0">{{HSVG:DOC}}</div>
+          <div class="flex-1 min-w-0">
+            <div class="font-semibold truncate" x-text="row.doc.name"></div>
+            <div class="text-sm text-slate-300 truncate" x-text="typeIcon(row.vehicle.type) + ' ' + row.vehicle.brand + ' ' + row.vehicle.model + ' • ' + docTypeLabel(row.doc.type)"></div>
+            <div class="text-xs" :class="docExpiryClass(row.doc)" x-text="row.doc.expiry ? 'Ističe: ' + fmtDate(row.doc.expiry) : 'Bez datuma isteka'"></div>
+          </div>
+          <span x-show="row.doc.file" class="text-blue-400 shrink-0" title="Ima privitak">{{HSVG:CLIP}}</span>
+        </div>
+      </template>
+    </div>
+    <div x-show="allDocuments().length === 0" class="text-center py-16 text-slate-400">
+      <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-[#1e293b] flex items-center justify-center text-slate-500">{{SVG:DOC}}</div>
+      <p>Još nema spremljenih dokumenata.</p>
+      <p class="text-sm text-slate-500 mt-1">Otvori vozilo i dodaj dokument (prometna, polica…).</p>
+    </div>
+  </div>
+
+  <!-- Service detail sheet -->
+  <div x-show="viewingService" x-cloak class="fixed inset-0 bg-black/60 flex items-end z-50" @click.self="viewingService = null">
+    <template x-if="viewingService">
+      <div class="bg-[#1e293b] w-full rounded-t-2xl p-4 safe-sheet max-h-[80vh] overflow-y-auto">
+        <div class="flex justify-between items-center mb-1">
+          <h3 class="text-lg font-bold" x-text="viewingService.type === 'small' ? 'Mali servis' : 'Veliki servis'"></h3>
+          <button @click="viewingService = null" class="text-slate-400 text-xl px-2">✕</button>
+        </div>
+        <div class="text-sm text-slate-400 mb-3" x-text="fmtDate(viewingService.date) + ' • ' + serviceUsage(viewingService)"></div>
+        <table class="w-full text-sm">
+          <template x-for="(it, i) in (viewingService.items || [])" :key="i">
+            <tr class="border-b border-slate-700">
+              <td class="py-2" x-text="it.name"></td>
+              <td class="py-2 text-right text-slate-400" x-text="(it.qty || 0) + ' × ' + Number(it.price || 0).toFixed(2) + ' €'"></td>
+              <td class="py-2 text-right" x-text="((it.qty || 0) * (it.price || 0)).toFixed(2) + ' €'"></td>
+            </tr>
+          </template>
+        </table>
+        <div x-show="!(viewingService.items || []).length" class="text-sm text-slate-400">Nema stavki</div>
+        <div class="text-right text-xl font-bold text-blue-400 mt-3" x-text="'Ukupno: ' + viewingService.total + ' €'"></div>
+        <button @click="deleteService(viewingService)" class="mt-4 w-full py-3 bg-red-900/40 text-red-300 rounded-xl">🗑️ Obriši servis</button>
+      </div>
+    </template>
+  </div>
+
+  <!-- Language / Settings Modal -->
+  <div x-show="showLang" x-cloak class="fixed inset-0 bg-black/60 flex items-end z-50" @click.self="showLang = false">
+    <div class="bg-[#1e293b] w-full rounded-t-2xl p-4 safe-sheet max-h-[85vh] overflow-y-auto">
+      <h3 class="text-lg font-bold mb-4">Jezik</h3>
+      <div class="space-y-2">
+        <button @click="setLang('hr')" class="w-full text-left p-3 rounded-xl" :class="lang==='hr' ? 'bg-blue-500' : 'bg-[#0f172a]'">🇭🇷 Hrvatski</button>
+        <button @click="setLang('en')" class="w-full text-left p-3 rounded-xl" :class="lang==='en' ? 'bg-blue-500' : 'bg-[#0f172a]'">🇬🇧 English</button>
+        <button @click="setLang('de')" class="w-full text-left p-3 rounded-xl" :class="lang==='de' ? 'bg-blue-500' : 'bg-[#0f172a]'">🇩🇪 Deutsch</button>
+        <button @click="setLang('it')" class="w-full text-left p-3 rounded-xl" :class="lang==='it' ? 'bg-blue-500' : 'bg-[#0f172a]'">🇮🇹 Italiano</button>
+      </div>
+      <h3 class="text-lg font-bold mt-5 mb-3">Podaci</h3>
+      <div class="space-y-2">
+        <button @click="downloadBackup()" class="w-full text-left p-3 rounded-xl bg-[#0f172a]">⬇️ Preuzmi backup</button>
+        <label class="block w-full text-left p-3 rounded-xl bg-[#0f172a] cursor-pointer">
+          ⬆️ Vrati iz backupa
+          <input type="file" accept="application/json,.json" class="hidden" @change="restoreBackup($event)">
+        </label>
+      </div>
+      <h3 class="text-lg font-bold mt-5 mb-3">Aplikacija</h3>
+      <div class="rounded-xl bg-[#0f172a] p-3 text-sm space-y-1">
+        <div class="flex justify-between"><span class="text-slate-400">Verzija aplikacije</span><span class="font-semibold" x-text="appVersion"></span></div>
+        <div class="flex justify-between"><span class="text-slate-400">Service worker</span><span x-text="swVersion || '—'"></span></div>
+        <div class="flex justify-between"><span class="text-slate-400">Na serveru</span><span x-text="remoteVersion || '—'"></span></div>
+      </div>
+      <button @click="checkForUpdate()" :disabled="refreshing" class="mt-2 w-full p-3 rounded-xl btn-primary flex items-center justify-center gap-2">
+        {{HSVG:REFRESH}} <span x-text="refreshing ? 'Osvježavam…' : 'Provjeri ažuriranje / Osvježi aplikaciju'"></span>
+      </button>
+      <div class="text-xs text-slate-500 mt-2 text-center" x-show="updateStatus" x-text="updateStatus"></div>
+      <div class="text-xs text-slate-500 mt-1 text-center">Tvoji podaci (vozila, servisi, dokumenti) ostaju sačuvani.</div>
+      <div class="text-[10px] text-slate-600 mt-3 text-center">Fotografija zimske gume: HopsonRoad, CC BY-SA 4.0 (Wikimedia Commons)</div>
+    </div>
+  </div>
+
+/*__NAV_HTML__*/
+</div>
+
+<script>
+// Verzija aplikacije – mora odgovarati VERSION u sw.js i version.json
+window.APP_VERSION = '1.3.1';
+
+// Service worker: registracija, provjera ažuriranja i jednokratno osvježavanje kad se aktivira nova verzija
+(function () {
+  // makni ?r= (hard refresh) iz adrese
+  if (/[?&]r=\d+/.test(location.search)) {
+    history.replaceState(null, '', location.pathname + location.hash);
+  }
+  if (!('serviceWorker' in navigator)) return;
+  var hadController = !!navigator.serviceWorker.controller;
+  var reloading = false;
+  navigator.serviceWorker.addEventListener('controllerchange', function () {
+    // Pri prvoj instalaciji nema stare verzije pa ne osvježavamo
+    if (!hadController || reloading) { hadController = true; return; }
+    reloading = true;
+    window.location.reload();
+  });
+  function check(reg) { if (reg) reg.update().catch(function () {}); }
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.register('./sw.js?v=' + window.APP_VERSION, { scope: './', updateViaCache: 'none' }).then(function (reg) {
+      window.__swReg = reg;
+      check(reg); // provjera pri svakom pokretanju
+      // iOS drži PWA dugo otvorenu – provjeri i kad se aplikacija vrati u fokus
+      document.addEventListener('visibilitychange', function () {
+        if (document.visibilityState === 'visible') check(reg);
+      });
+      window.addEventListener('pageshow', function () { check(reg); });
+      window.addEventListener('online', function () { check(reg); });
+    }).catch(function () {});
+  });
+})();
+
+function emptyVehicleForm() {
+  return { type:'Automobil', brand:'', model:'', year:'', vin:'', mileage:'', workHours:'', registrationDate:'', insuranceDate:'', photo:'', tireSize:'', tireType:'', tireDOT:'', tirePressure:'', tireTorqueAlu:'', tireTorqueSteel:'', notes:'' };
+}
+function emptyServiceForm() {
+  return { type:'small', date: new Date().toISOString().slice(0,10), mileage:0, workHours:'', items:[{name:'',qty:1,price:0}] };
+}
+
+function app() {
+  return {
+    appVersion: window.APP_VERSION,
+    swVersion: '',
+    remoteVersion: '',
+    updateAvailable: false,
+    updateDismissed: false,
+    updateStatus: '',
+    refreshing: false,
+    currentView: 'home',
+    showLang: false,
+    lang: localStorage.getItem('lang') || 'hr',
+    vehicles: JSON.parse(localStorage.getItem('vehicles') || '[]'),
+    selected: null,
+    editingVehicle: null,
+    viewingService: null,
+    vehicleTypes: [
+      { value: 'Automobil', icon: '🚗' },
+      { value: 'Bager', icon: '🏗️' },
+      { value: 'Traktor', icon: '🚜' },
+      { value: 'ATV', icon: '🏍️' }
+    ],
+    form: emptyVehicleForm(),
+    serviceForm: emptyServiceForm(),
+    docForm: { name:'', type:'registration', expiry:'', file:'' },
+
+    translations: {
+      hr: { myVehicles: 'Moja vozila', noVehicles: 'Nema vozila. Dodaj prvo.', addVehicle: 'Novo vozilo' },
+      en: { myVehicles: 'My Vehicles', noVehicles: 'No vehicles. Add one.', addVehicle: 'New Vehicle' },
+      de: { myVehicles: 'Meine Fahrzeuge', noVehicles: 'Keine Fahrzeuge.', addVehicle: 'Neues Fahrzeug' },
+      it: { myVehicles: 'I miei veicoli', noVehicles: 'Nessun veicolo.', addVehicle: 'Nuovo veicolo' }
+    },
+
+    t(key) { return this.translations[this.lang]?.[key] || key; },
+
+    init() {
+      this.migrate();
+      this.readSwVersion();
+      this.fetchRemoteVersion();
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') this.fetchRemoteVersion();
+      });
+      // Play sound if reminder is visible
+      this.$nextTick(() => {
+        if (this.showTireReminder()) {
+          this.playReminderSound();
+        }
+      });
+    },
+
+    // ---- Ažuriranje aplikacije ----
+    readSwVersion() {
+      if (!('serviceWorker' in navigator)) return;
+      const ask = () => {
+        const ctrl = navigator.serviceWorker.controller;
+        if (!ctrl) { this.swVersion = 'nije aktivan'; return; }
+        const ch = new MessageChannel();
+        ch.port1.onmessage = (e) => { this.swVersion = (e.data && e.data.cache) || 'stari (bez oznake)'; };
+        ctrl.postMessage({ type: 'GET_VERSION' }, [ch.port2]);
+        // stari SW ne odgovara na poruku
+        setTimeout(() => { if (!this.swVersion) this.swVersion = 'stari (bez oznake)'; }, 1500);
+      };
+      ask();
+      navigator.serviceWorker.addEventListener('controllerchange', () => { this.swVersion = ''; ask(); });
+    },
+
+    async fetchRemoteVersion() {
+      try {
+        const res = await fetch('version.json?t=' + Date.now(), { cache: 'no-store' });
+        if (!res.ok) return null;
+        const data = await res.json();
+        this.remoteVersion = data.version || '';
+        const newer = !!(this.remoteVersion && this.remoteVersion !== this.appVersion);
+        this.updateAvailable = newer;
+        if (!newer) this.updateDismissed = false;
+        return data;
+      } catch (e) { return null; }
+    },
+
+    async checkForUpdate() {
+      this.updateStatus = 'Provjeravam…';
+      const data = await this.fetchRemoteVersion();
+      if (!data) {
+        this.updateStatus = 'Nema veze sa serverom – pokušaj kad imaš internet.';
+        return;
+      }
+      // Uvijek napravi čisto osvježavanje: odregistriraj SW, obriši keš, ponovno učitaj
+      await this.hardRefresh();
+    },
+
+    dismissUpdate() {
+      this.updateDismissed = true;
+    },
+
+    async applyUpdate() {
+      this.refreshing = true;
+      try {
+        if ('serviceWorker' in navigator) {
+          const reg = window.__swReg || (await navigator.serviceWorker.getRegistration());
+          if (reg) {
+            try { await reg.update(); } catch (e) {}
+            if (reg.waiting) {
+              reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+              setTimeout(() => { if (this.refreshing) this.hardRefresh(); }, 2000);
+              return;
+            }
+          }
+        }
+      } catch (e) {}
+      await this.hardRefresh();
+    },
+
+    async hardRefresh() {
+      this.refreshing = true;
+      this.updateStatus = 'Brišem stari keš i učitavam najnoviju verziju…';
+      try {
+        if ('serviceWorker' in navigator) {
+          const regs = await navigator.serviceWorker.getRegistrations();
+          await Promise.all(regs.map(r => r.unregister()));
+        }
+      } catch (e) {}
+      try {
+        if (window.caches) {
+          const keys = await caches.keys();
+          await Promise.all(keys.map(k => caches.delete(k)));
+        }
+      } catch (e) {}
+      // localStorage (podaci) se NE briše
+      location.replace(location.pathname + '?r=' + Date.now());
+    },
+
+    // Migracija starih podataka: tireTorque -> tireTorqueAlu, zadani tip Automobil
+    migrate() {
+      let changed = false;
+      this.vehicles = (Array.isArray(this.vehicles) ? this.vehicles : []).map(v => this.normalizeVehicle(v, () => { changed = true; }));
+      if (changed) this.persist();
+    },
+
+    normalizeVehicle(v, onChange = () => {}) {
+      v = v || {};
+      if (!v.type) { v.type = 'Automobil'; onChange(); }
+      if (v.tireTorque !== undefined) {
+        if (!v.tireTorqueAlu && v.tireTorque) v.tireTorqueAlu = v.tireTorque;
+        delete v.tireTorque;
+        onChange();
+      }
+      if (v.tireTorqueAlu === undefined) { v.tireTorqueAlu = ''; onChange(); }
+      if (v.tireTorqueSteel === undefined) { v.tireTorqueSteel = ''; onChange(); }
+      if (v.workHours === undefined) { v.workHours = ''; onChange(); }
+      if (!Array.isArray(v.services)) { v.services = []; onChange(); }
+      if (!Array.isArray(v.documents)) { v.documents = []; onChange(); }
+      if (!v.id) { v.id = Date.now() + Math.floor(Math.random() * 1000); onChange(); }
+      return v;
+    },
+
+    isCar(type) { return !type || type === 'Automobil'; },
+
+    typeIcon(type) {
+      const t = this.vehicleTypes.find(x => x.value === (type || 'Automobil'));
+      return t ? t.icon : '🚗';
+    },
+
+    hasHours(v) {
+      return v && v.workHours !== '' && v.workHours !== null && v.workHours !== undefined && !isNaN(Number(v.workHours));
+    },
+
+    fmtNum(n) { return (Number(n) || 0).toLocaleString('hr-HR'); },
+
+    // Na prikazu: 'h' ako su uneseni radni sati, inače km
+    usageText(v) {
+      if (!v) return '';
+      if (!this.isCar(v.type) && this.hasHours(v)) return this.fmtNum(v.workHours) + ' h';
+      return this.fmtNum(v.mileage) + ' km';
+    },
+
+    serviceUsage(s) {
+      if (s && s.workHours !== '' && s.workHours !== null && s.workHours !== undefined) return this.fmtNum(s.workHours) + ' h';
+      return this.fmtNum(s ? s.mileage : 0) + ' km';
+    },
+
+    hasImage(v) { return !!(v && (v.photo || this.isCar(v.type))); },
+
+    playReminderSound() {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(880, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(440, ctx.currentTime + 0.3);
+        gain.gain.setValueAtTime(0.1, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.4);
+      } catch (e) {}
+    },
+
+    setLang(l) {
+      this.lang = l;
+      localStorage.setItem('lang', l);
+      this.showLang = false;
+    },
+
+/*__DEFAULT_PHOTO__*/
+
+    headerTitle() {
+      if (this.currentView === 'services') return 'Servisi';
+      if (this.currentView === 'documents') return 'Dokumenti';
+      return this.t('myVehicles');
+    },
+
+    activeTab() {
+      if (this.showLang) return 'settings';
+      if (this.currentView === 'services') return 'services';
+      if (this.currentView === 'documents') return 'documents';
+      return 'vehicles';
+    },
+
+    tabIndex() {
+      return ['vehicles', 'services', 'documents', 'settings'].indexOf(this.activeTab());
+    },
+
+    goTab(view) {
+      this.showLang = false;
+      this.viewingService = null;
+      this.currentView = view;
+      window.scrollTo(0, 0);
+    },
+
+    // Središnji "+" (varijanta C): servis ako je otvoreno vozilo, inače novo vozilo
+    quickAdd() {
+      if (this.currentView === 'vehicle' && this.selected) return this.newService();
+      this.newVehicle();
+    },
+
+    allServices() {
+      const rows = [];
+      this.vehicles.forEach(v => (v.services || []).forEach(s => rows.push({ vehicle: v, service: s })));
+      return rows.sort((a, b) => String(b.service.date || '').localeCompare(String(a.service.date || '')) || (b.service.id || 0) - (a.service.id || 0));
+    },
+
+    allServicesTotal() {
+      return this.allServices().reduce((acc, r) => acc + parseFloat(r.service.total || 0), 0).toFixed(2);
+    },
+
+    openServiceFromList(row) {
+      this.selected = row.vehicle;
+      this.viewService(row.service);
+    },
+
+    allDocuments() {
+      const rows = [];
+      this.vehicles.forEach(v => (v.documents || []).forEach(d => rows.push({ vehicle: v, doc: d })));
+      // najprije oni s najbližim istekom, zatim bez datuma
+      return rows.sort((a, b) => {
+        const ea = a.doc.expiry || '9999', eb = b.doc.expiry || '9999';
+        return ea.localeCompare(eb) || (b.doc.id || 0) - (a.doc.id || 0);
+      });
+    },
+
+    docTypeLabel(t) {
+      return ({ registration: 'Registracija', insurance: 'Osiguranje', other: 'Ostalo' })[t] || 'Ostalo';
+    },
+
+    docExpiryClass(d) {
+      if (!d.expiry) return 'text-slate-500';
+      const n = this.daysUntil(d.expiry);
+      if (n < 0) return 'text-red-400';
+      if (n <= 30) return 'text-yellow-300';
+      return 'text-slate-400';
+    },
+
+    fmtDate(d) {
+      if (!d) return '—';
+      const m = String(d).match(/^(\d{4})-(\d{2})-(\d{2})/);
+      return m ? `${m[3]}.${m[2]}.${m[1]}.` : d;
+    },
+
+    openVehicle(v) {
+      this.selected = v;
+      this.currentView = 'vehicle';
+      window.scrollTo(0, 0);
+    },
+
+    newVehicle() {
+      this.editingVehicle = null;
+      this.form = emptyVehicleForm();
+      this.currentView = 'addVehicle';
+      window.scrollTo(0, 0);
+    },
+
+    editVehicle(v) {
+      if (!v) return;
+      this.editingVehicle = v;
+      const f = emptyVehicleForm();
+      Object.keys(f).forEach(k => { if (v[k] !== undefined) f[k] = v[k]; });
+      this.form = f;
+      this.currentView = 'addVehicle';
+      window.scrollTo(0, 0);
+    },
+
+    cancelVehicleForm() {
+      this.currentView = this.editingVehicle ? 'vehicle' : 'home';
+      this.editingVehicle = null;
+      this.form = emptyVehicleForm();
+    },
+
+    handlePhoto(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => this.form.photo = reader.result;
+      reader.readAsDataURL(file);
+    },
+
+    handleDocFile(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => this.docForm.file = reader.result;
+      reader.readAsDataURL(file);
+    },
+
+    saveVehicle() {
+      if (this.isCar(this.form.type) && !this.form.vin) return alert('Broj šasije je obavezan');
+      const data = { ...this.form };
+      if (this.isCar(data.type)) data.workHours = '';
+      if (data.mileage === '' || data.mileage === null || data.mileage === undefined) data.mileage = 0;
+      if (this.editingVehicle) {
+        Object.assign(this.editingVehicle, data);
+        this.selected = this.editingVehicle;
+        this.editingVehicle = null;
+        this.persist();
+        this.form = emptyVehicleForm();
+        this.currentView = 'vehicle';
+        return;
+      }
+      const vehicle = {
+        id: Date.now(),
+        ...data,
+        services: [],
+        documents: []
+      };
+      this.vehicles.push(vehicle);
+      this.persist();
+      this.form = emptyVehicleForm();
+      this.currentView = 'home';
+    },
+
+    calculateTotal() {
+      return this.serviceForm.items.reduce((sum, i) => sum + (i.qty * i.price || 0), 0).toFixed(2);
+    },
+
+    newService() {
+      this.serviceForm = emptyServiceForm();
+      if (this.selected) {
+        this.serviceForm.mileage = Number(this.selected.mileage) || 0;
+        if (!this.isCar(this.selected.type) && this.hasHours(this.selected)) this.serviceForm.workHours = Number(this.selected.workHours);
+      }
+      this.currentView = 'addService';
+    },
+
+    saveService() {
+      if (!this.selected) return;
+      const hours = (!this.isCar(this.selected.type) && this.serviceForm.workHours !== '' && this.serviceForm.workHours !== null) ? Number(this.serviceForm.workHours) : '';
+      const service = {
+        id: Date.now(),
+        type: this.serviceForm.type,
+        date: this.serviceForm.date,
+        mileage: this.serviceForm.mileage || 0,
+        workHours: isNaN(hours) ? '' : hours,
+        items: this.serviceForm.items.filter(i => i.name),
+        total: this.calculateTotal()
+      };
+      this.selected.services.push(service);
+      // update mileage / work hours if higher
+      if (service.mileage > (Number(this.selected.mileage) || 0)) this.selected.mileage = service.mileage;
+      if (service.workHours !== '' && (!this.hasHours(this.selected) || service.workHours > Number(this.selected.workHours))) this.selected.workHours = service.workHours;
+      this.persist();
+      this.serviceForm = emptyServiceForm();
+      this.currentView = 'vehicle';
+    },
+
+    viewService(s) {
+      this.viewingService = s;
+    },
+
+    deleteService(s) {
+      if (!this.selected || !s) return;
+      if (!confirm('Obrisati ovaj servis?')) return;
+      this.selected.services = this.selected.services.filter(x => x.id !== s.id);
+      this.viewingService = null;
+      this.persist();
+    },
+
+    saveDocument() {
+      if (!this.selected) return;
+      const doc = {
+        id: Date.now(),
+        name: this.docForm.name,
+        type: this.docForm.type,
+        expiry: this.docForm.expiry,
+        file: this.docForm.file
+      };
+      this.selected.documents.push(doc);
+      this.persist();
+      this.docForm = { name:'', type:'registration', expiry:'', file:'' };
+      this.currentView = 'vehicle';
+    },
+
+    openDocument(d) {
+      if (!d || !d.file) return;
+      try {
+        const [meta, b64] = d.file.split(',');
+        const mime = (meta.match(/data:(.*?);/) || [])[1] || 'application/octet-stream';
+        const bin = atob(b64);
+        const arr = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+        const url = URL.createObjectURL(new Blob([arr], { type: mime }));
+        window.open(url, '_blank') || (window.location.href = url);
+      } catch (e) {}
+    },
+
+    totalCosts() {
+      if (!this.selected || !this.selected.services) return '0.00';
+      const sum = this.selected.services.reduce((acc, s) => acc + parseFloat(s.total || 0), 0);
+      return sum.toFixed(2);
+    },
+
+    esc(s) {
+      return String(s === undefined || s === null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+    },
+
+    exportPDF() {
+      if (!this.selected) return;
+      const v = this.selected;
+      const e = (x) => this.esc(x);
+      const servicesHtml = v.services.map(s => 
+        `<tr><td>${e(s.date)}</td><td>${e(this.serviceUsage(s))}</td><td>${s.type === 'small' ? 'Mali servis' : 'Veliki servis'}</td><td>${e(s.total)} €</td></tr>`
+      ).join('');
+      const hoursLine = (!this.isCar(v.type) && this.hasHours(v)) ? `<p>Radni sati: ${e(this.fmtNum(v.workHours))} h</p>` : '';
+
+      const html = `
+        <html><head><meta charset="UTF-8"><title>Izvještaj - ${e(v.brand)} ${e(v.model)}</title>
+        <style>
+          body { font-family: Arial, sans-serif; padding: 40px; color: #111; }
+          h1 { color: #1e40af; }
+          table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+          th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+          th { background: #f1f5f9; }
+          .total { font-size: 1.4em; font-weight: bold; margin-top: 20px; }
+        </style></head><body>
+        <h1>Izvještaj o vozilu</h1>
+        <p><strong>${e(v.brand)} ${e(v.model)}</strong></p>
+        <p>Tip vozila: ${e(v.type || 'Automobil')}</p>
+        <p>Broj šasije: ${e(v.vin || '—')}</p>
+        <p>Kilometraža: ${e(this.fmtNum(v.mileage))} km</p>
+        ${hoursLine}
+        <p>Registracija: ${e(v.registrationDate || '—')}</p>
+        <h2>Gume</h2>
+        <table>
+          <tr><th>Dimenzije</th><td>${e(v.tireSize || '—')}</td></tr>
+          <tr><th>Tip</th><td>${e(v.tireType || '—')}</td></tr>
+          <tr><th>DOT</th><td>${e(v.tireDOT || '—')}</td></tr>
+          <tr><th>Tlak</th><td>${e(v.tirePressure || '—')}</td></tr>
+          <tr><th>Moment stezanja Aluminijske</th><td>${e(v.tireTorqueAlu || '—')}</td></tr>
+          <tr><th>Moment stezanja Čelične</th><td>${e(v.tireTorqueSteel || '—')}</td></tr>
+        </table>
+        <h2>Servisna povijest</h2>
+        <table>
+          <tr><th>Datum</th><th>Kilometraža / sati</th><th>Tip</th><th>Iznos</th></tr>
+          ${servicesHtml || '<tr><td colspan="4">Nema servisa</td></tr>'}
+        </table>
+        <div class="total">Ukupno: ${this.totalCosts()} €</div>
+        <p style="margin-top:40px; font-size:0.8em; color:#666;">Generirano iz aplikacije Servisni Intervali</p>
+        </body></html>
+      `;
+
+      const win = window.open('', '_blank');
+      if (win) {
+        win.document.write(html);
+        win.document.close();
+        setTimeout(() => win.print(), 500);
+        return;
+      }
+      // iOS PWA (standalone) često blokira nove prozore – ispis preko skrivenog iframea
+      const frame = document.createElement('iframe');
+      frame.style.cssText = 'position:fixed;width:0;height:0;border:0;right:0;bottom:0;';
+      document.body.appendChild(frame);
+      frame.contentDocument.open();
+      frame.contentDocument.write(html);
+      frame.contentDocument.close();
+      setTimeout(() => {
+        try { frame.contentWindow.focus(); frame.contentWindow.print(); } catch (err) {}
+        setTimeout(() => frame.remove(), 2000);
+      }, 500);
+    },
+
+    shareVin(v) {
+      const usage = (!this.isCar(v.type) && this.hasHours(v)) ? `Radni sati: ${v.workHours} h` : `Kilometraža: ${v.mileage} km`;
+      const text = `Vozilo: ${v.brand} ${v.model}\nBroj šasije: ${v.vin || '—'}\n${usage}`;
+      if (navigator.share) {
+        navigator.share({ title: 'Šasija vozila', text }).catch(() => {});
+      } else {
+        navigator.clipboard.writeText(text).then(() => alert('Kopirano u međuspremnik'));
+      }
+    },
+
+    async downloadBackup() {
+      const data = { app: 'Servisni Intervali', version: 1, exportedAt: new Date().toISOString(), lang: this.lang, vehicles: this.vehicles };
+      const json = JSON.stringify(data, null, 2);
+      const name = 'servisni-intervali-backup-' + new Date().toISOString().slice(0,10) + '.json';
+      try {
+        const file = new File([json], name, { type: 'application/json' });
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          await navigator.share({ files: [file], title: 'Servisni Intervali backup' });
+          return;
+        }
+      } catch (e) {
+        if (e && e.name === 'AbortError') return;
+      }
+      const url = URL.createObjectURL(new Blob([json], { type: 'application/json' }));
+      const a = document.createElement('a');
+      a.href = url; a.download = name;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+    },
+
+    restoreBackup(e) {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const data = JSON.parse(reader.result);
+          const list = Array.isArray(data) ? data : data.vehicles;
+          if (!Array.isArray(list)) throw new Error('format');
+          if (!confirm('Zamijeniti trenutne podatke s backupom (' + list.length + ' vozila)?')) return;
+          this.vehicles = list.map(v => this.normalizeVehicle(v));
+          this.selected = null;
+          this.persist();
+          this.showLang = false;
+          this.currentView = 'home';
+          alert('Backup vraćen');
+        } catch (err) {
+          alert('Neispravna backup datoteka');
+        } finally {
+          e.target.value = '';
+        }
+      };
+      reader.readAsText(file);
+    },
+
+    reminderBackgroundStyle() {
+      const winter = 'background-image: linear-gradient(to bottom, rgba(15,23,42,0.65), rgba(15,23,42,0.8)), url(img/tire-winter.jpg); background-size: cover; background-position: center;';
+      const summer = 'background-image: linear-gradient(to bottom, rgba(15,23,42,0.6), rgba(15,23,42,0.75)), url(img/tire-summer.jpg); background-size: cover; background-position: center;';
+      return this.isWinterReminder() ? winter : summer;
+    },
+
+    isWinterReminder() {
+      const m = new Date().getMonth() + 1;
+      return m === 10 || m === 11;
+    },
+
+    showTireReminder() {
+      const m = new Date().getMonth() + 1;
+      return (m === 3 || m === 4) || (m === 10 || m === 11);
+    },
+
+    daysUntil(dateStr) {
+      if (!dateStr) return 999;
+      const d = new Date(dateStr);
+      const today = new Date();
+      today.setHours(0,0,0,0);
+      const diff = Math.ceil((d - today) / (1000 * 60 * 60 * 24));
+      return diff;
+    },
+
+    tireReminderIcon() {
+      const m = new Date().getMonth() + 1;
+      if (m === 3 || m === 4) return '☀️';
+      if (m === 10 || m === 11) return '❄️';
+      return '🔄';
+    },
+
+    tireReminderText() {
+      const m = new Date().getMonth() + 1;
+      if (m === 3 || m === 4) {
+        return 'Vrijeme je za ljetne gume (od 15.04.)';
+      }
+      if (m === 10 || m === 11) {
+        return 'Vrijeme je za zimske gume (od 15.11.)';
+      }
+      return '';
+    },
+
+    persist() {
+      localStorage.setItem('vehicles', JSON.stringify(this.vehicles));
+    }
+  }
+}
+</script>
+</body>
+</html>
