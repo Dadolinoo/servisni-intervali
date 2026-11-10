@@ -1,6 +1,6 @@
 # Servisni Intervali – upute za iPhone (PWA)
 
-Verzija: **1.3.1** · cache: **si-v4**
+Verzija: **1.4.0** · cache: **si-v5**
 
 Aplikacija se ne instalira iz App Storea. Na iPhoneu je otvaraš u Safariju i
 dodaješ na početni zaslon („Dodaj na početni zaslon”). Radi offline, u
@@ -46,6 +46,14 @@ novu adresu. Prije prelaska:
 
 1. Na staroj adresi: **Postavke → Preuzmi backup** (JSON datoteka).
 2. Na novoj adresi: **Postavke → Vrati iz backupa** i odaberi tu datoteku.
+
+---
+
+## Cloud backup (od 1.4.0)
+
+U aplikaciji se prijavi emailom i lozinkom (**Postavke → Cloud backup**).
+Podaci se spremaju lokalno i automatski sinkroniziraju u oblak. Na novom
+mobitelu samo se prijavi istim računom i podaci se vrate.
 
 ---
 
