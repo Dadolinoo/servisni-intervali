@@ -276,7 +276,7 @@ textarea.inp{min-height:70px}
 <div id="sheet" class="hidden"></div>
 <script>
 // ===== Servisni Intervali 1.4.0 =====
-window.APP_VERSION = '1.4.0';
+window.APP_VERSION = '1.4.1';
 (function () {
   if (/[?&]r=\d+/.test(location.search)) history.replaceState(null, '', location.pathname + location.hash);
   if (!('serviceWorker' in navigator)) return;
@@ -476,6 +476,8 @@ function defaultPhoto(brand, model = '') {
   if (b.includes('audi') && /\b(rs|s\d|sq)/.test(m)) return U('1606664515524-ed2f786a0bd6');
   if ((b.includes('volkswagen') || b === 'vw') && m.includes('tiguan')) return 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/cf/Volkswagen_Tiguan_eTSI_R-Line_%2725_%281%29.jpg/1280px-Volkswagen_Tiguan_eTSI_R-Line_%2725_%281%29.jpg';
   if (b.includes('cupra') || m.includes('cupra') || b.includes('porsche')) return U('1503376780353-7e6692767b70');
+  const LOC = { renault: './img/brand-renault.jpg', kia: './img/brand-kia.jpg', dacia: './img/brand-dacia.jpg' };
+  if (LOC[b]) return LOC[b];
   const ph = { bmw: '1555215695-3004980ad54e', audi: '1606664515524-ed2f786a0bd6', volkswagen: '1541899481282-d53bffe3c35d', vw: '1541899481282-d53bffe3c35d', mercedes: '1618843479313-40f8afb4b4d8', 'mercedes-benz': '1618843479313-40f8afb4b4d8', toyota: '1621007947382-bb3c3994e3fb', skoda: '1609521263047-f8f205293f24', 'škoda': '1609521263047-f8f205293f24', renault: '1619767886558-efdc259cde1a', peugeot: '1605559424843-9e4c228bf1c2', citroen: '1552519507-da3b142c6e3d', opel: '1549317661-bd32c8ce0db2', ford: '1551830820-330a71b99659', hyundai: '1617531653332-bd46c24f2068', kia: '1619767886558-efdc259cde1a', mazda: '1617531653332-bd46c24f2068', honda: '1605559424843-9e4c228bf1c2', fiat: '1552519507-da3b142c6e3d', seat: '1541899481282-d53bffe3c35d', dacia: '1619767886558-efdc259cde1a', nissan: '1621007947382-bb3c3994e3fb', volvo: '1618843479313-40f8afb4b4d8', tesla: '1560958089-b8a1929cea89', mini: '1555215695-3004980ad54e' };
   return U(ph[b] || '1494976388531-d1058494cdd8');
 }
@@ -928,7 +930,7 @@ function vSettings() {
   h += `</div><div class="glass set-card">`;
   h += row('', 'pen', 'Verzija', `<span>${esc(S.appVersion)}${S.remoteVersion && S.remoteVersion !== S.appVersion ? ' · na serveru ' + esc(S.remoteVersion) : ''}</span>`, '');
   h += row('checkUpdate', 'refresh', 'Provjeri ažuriranje', `<span>${esc(S.updateStatus || (S.updateAvailable ? 'Dostupna je nova verzija ' + S.remoteVersion : 'Aplikacija je ažurna'))}</span>`, chev);
-  h += `</div><div style="font-size:11px;color:#64748b;text-align:center;padding:4px 10px">Fotografija zimske gume: HopsonRoad, CC BY-SA 4.0 · Logotipi: Simple Icons</div>`;
+  h += `</div><div style="font-size:11px;color:#64748b;text-align:center;padding:4px 10px">Fotografija zimske gume: HopsonRoad, CC BY-SA 4.0 · Logotipi: Simple Icons · Fotografije Renault/Kia/Dacia: Wikimedia Commons (CC BY-SA)</div>`;
   return h;
 }
 
