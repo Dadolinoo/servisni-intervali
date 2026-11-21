@@ -179,7 +179,7 @@ textarea.inp{min-height:70px}
 .part.off{opacity:.62}
 .part .ph{display:flex;align-items:center;gap:9px}
 .part .pic{width:32px;height:32px;border-radius:10px;display:grid;place-items:center;background:rgba(56,189,248,.12);border:1px solid rgba(125,211,252,.25);color:#7dd3fc;font-size:15px;flex:none}
-.part .name{font-size:15px;font-weight:700;color:#f1f5f9}
+.part .name{font-size:15px;font-weight:700;color:#f1f5f9;flex:1;min-width:0;line-height:1.25}
 .part .sub{font-size:12.5px;color:#94a3b8;font-weight:550;margin-left:auto;margin-right:8px;max-width:140px;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .part .pbody{margin-top:9px;display:flex;flex-direction:column;gap:8px}
 .part .x{color:#94a3b8;padding:4px}
@@ -320,8 +320,8 @@ textarea.inp{min-height:70px}
 <div id="sheet" class="hidden"></div>
 <div id="tyreNote" class="tyre-note" aria-hidden="true"></div>
 <script>
-// ===== Servisni Intervali 1.4.8 =====
-window.APP_VERSION = '1.4.8';
+// ===== Servisni Intervali 1.4.9 =====
+window.APP_VERSION = '1.4.9';
 (function () {
   if (window.__SI_NOW != null || window.__SI_NO_SPLASH) { const s = document.getElementById('splash'); if (s) s.remove(); }
 
@@ -466,7 +466,10 @@ const PARTS = [
   { key: 'plocice', name: 'Pločice', ico: '🛑', brands: ['Brembo', 'ATE', 'Textar', 'TRW', 'Ferodo', 'Bosch', 'Pagid', 'OEM'], spec: 'Pozicija (prednje / stražnje)' },
   { key: 'remen', name: 'Zupčasti remen', ico: '➰', brands: ['Gates', 'Continental', 'Dayco', 'INA', 'SKF', 'Bosch', 'OEM'], spec: 'Oznaka (komplet)' },
   { key: 'vodena', name: 'Vodena pumpa', ico: '💦', brands: ['SKF', 'INA', 'Hepu', 'Gates', 'Graf', 'OEM'], spec: 'Oznaka' },
-  { key: 'svjecice', name: 'Svjećice', ico: '⚡', brands: ['Bosch', 'NGK', 'Denso', 'Champion', 'Beru', 'OEM'], spec: 'Oznaka' }
+  { key: 'svjecice', name: 'Svjećice', ico: '⚡', brands: ['Bosch', 'NGK', 'Denso', 'Champion', 'Beru', 'OEM'], spec: 'Oznaka' },
+  { key: 'set_remen_pumpa', name: 'Set zupčastog remena s pumpom vode', ico: '➰', brands: ['Gates', 'Contitech', 'SKF', 'INA', 'Dayco'], spec: 'Oznaka (komplet)' },
+  { key: 'set_mikro_remen', name: 'Set mikro remena', ico: '🔗', brands: ['Gates', 'Contitech', 'SKF', 'INA', 'Dayco'], spec: 'Oznaka' },
+  { key: 'grijaci', name: 'Grijači motora', ico: '🔥', brands: ['Bosch', 'NGK', 'Beru', 'Denso', 'Champion'], spec: 'Oznaka', qty: true }
 ];
 const GRADES = ['0W-16', '0W-20', '0W-30', '0W-40', '5W-20', '5W-30', '5W-40', '10W-40', '15W-40', '20W-50'];
 const SERVICE_TYPES = [['regular', 'Redovni servis'], ['small', 'Mali servis'], ['big', 'Veliki servis'], ['tyres', 'Zamjena guma'], ['repair', 'Popravak'], ['other', 'Ostalo']];
@@ -474,12 +477,12 @@ function serviceTitle(s) { return s.title || (SERVICE_TYPES.find(t => t[0] === s
 function partLabel(p) { return p.key === 'ulje' && p.grade ? 'Ulje ' + p.grade : p.name; }
 function partSummary(p) {
   const brand = p.brand === 'Drugo' ? p.brandOther : p.brand;
-  return [brand, p.grade, p.liters ? String(p.liters).replace('.', ',') + ' L' : '', p.spec].filter(Boolean).join(' · ');
+  return [brand, p.grade, p.liters ? String(p.liters).replace('.', ',') + ' L' : '', p.qty ? String(p.qty) + ' kom' : '', p.spec].filter(Boolean).join(' · ');
 }
 function emptyServiceForm(v) {
   return {
     type: 'regular', date: new Date().toISOString().slice(0, 10), mileage: v ? (Number(v.mileage) || '') : '', workHours: v && hasHours(v) ? v.workHours : '', note: '',
-    parts: PARTS.map(p => ({ key: p.key, name: p.name, on: false, brand: '', brandOther: '', spec: '', grade: '', liters: '', price: '' })),
+    parts: PARTS.map(p => ({ key: p.key, name: p.name, on: false, brand: '', brandOther: '', spec: '', grade: '', liters: '', qty: '', price: '' })),
     custom: []
   };
 }
@@ -494,7 +497,7 @@ function serviceToForm(s, v) {
   (s.parts || []).forEach(p => {
     if (p.key && known[p.key]) {
       const fp = f.parts.find(x => x.key === p.key); if (!fp) return;
-      fp.on = true; fp.spec = p.spec || ''; fp.grade = p.grade || ''; fp.liters = p.liters || '';
+      fp.on = true; fp.spec = p.spec || ''; fp.grade = p.grade || ''; fp.liters = p.liters || ''; fp.qty = p.qty || '';
       fp.price = (p.price === 0 || p.price) ? p.price : '';
       const brands = known[p.key].brands || [];
       if (p.brand && brands.indexOf(p.brand) >= 0) fp.brand = p.brand;
@@ -1162,6 +1165,10 @@ function partRow(p, i, custom) {
       h += field('Naziv ulja', inp(base + 'spec', p.spec, 'placeholder="' + esc(def.spec) + '"'));
       h += `<div><span class="flabel">Litraža</span><div class="chips">${std.map(l => `<button class="chipx ${String(p.liters) === l ? 'on' : ''}" data-a="liters" data-i="${i}" data-v="${l}">${l} L</button>`).join('')}<input class="inp" style="width:104px;min-height:34px;padding:5px 9px;font-size:14px" data-f="${base}liters" value="${std.includes(String(p.liters)) ? '' : esc(p.liters)}" inputmode="decimal" placeholder="Drugo (L)"></div></div>`;
     } else h += field(def.spec.split(' (')[0], inp(base + 'spec', p.spec, 'placeholder="' + esc(def.spec.includes('(') ? def.spec.split('(')[1].replace(')', '') : '') + '"'));
+    if (def.qty) {
+      const qstd = ['1', '2', '3', '4', '6', '8'];
+      h += `<div><span class="flabel">Količina</span><div class="chips">${qstd.map(q => `<button type="button" class="chipx ${String(p.qty) === q ? 'on' : ''}" data-a="qty" data-i="${i}" data-v="${q}">${q}</button>`).join('')}</div></div>`;
+    }
   }
   h += field('Cijena (€)', inp(base + 'price', p.price, 'inputmode="decimal" placeholder="0,00"'));
   return h + `</div></div>`;
@@ -1394,7 +1401,7 @@ function saveVehicle() {
 }
 function saveService() {
   const v = sel(); if (!v) return; const f = S.sform;
-  const parts = f.parts.filter(p => p.on).map(p => ({ key: p.key, name: p.name, brand: p.brand === 'Drugo' ? (p.brandOther || '') : p.brand, spec: p.spec, grade: p.grade || '', liters: p.liters || '', price: p.price === '' ? '' : (num(p.price) || 0) }));
+  const parts = f.parts.filter(p => p.on).map(p => ({ key: p.key, name: p.name, brand: p.brand === 'Drugo' ? (p.brandOther || '') : p.brand, spec: p.spec, grade: p.grade || '', liters: p.liters || '', qty: p.qty || '', price: p.price === '' ? '' : (num(p.price) || 0) }));
   f.custom.filter(p => p.name || p.price).forEach(p => parts.push({ key: 'custom', name: p.name || 'Stavka', brand: '', spec: p.spec, grade: '', liters: '', price: p.price === '' ? '' : (num(p.price) || 0) }));
   if (!parts.length && !confirm('Nisi odabrao nijedan dio. Spremiti servis bez stavki?')) return;
   const hours = (!isCar(v.type) && f.workHours !== '') ? Number(String(f.workHours).replace(',', '.')) : '';
@@ -1500,6 +1507,7 @@ document.addEventListener('click', async (ev) => {
     case 'backService': go((S.sform && S.sform.backView) || (sel() ? 'history' : 'services')); break;
     case 'ptog': { const p = S.sform.parts[+el.dataset.i]; p.on = !p.on; render(); break; }
     case 'liters': { const p = S.sform.parts[+el.dataset.i]; p.liters = String(p.liters) === v ? '' : v; render(); break; }
+    case 'qty': { const p = S.sform.parts[+el.dataset.i]; p.qty = String(p.qty) === v ? '' : v; render(); break; }
     case 'addCustom': S.sform.custom.push({ name: '', spec: '', price: '' }); render(); break;
     case 'rmCustom': S.sform.custom.splice(+el.dataset.i, 1); render(); break;
     case 'saveService': saveService(); break;

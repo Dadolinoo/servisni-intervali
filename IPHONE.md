@@ -1,6 +1,6 @@
 # Servisni Intervali – upute za iPhone (PWA)
 
-Verzija: **1.4.8** · cache: **si-v13**
+Verzija: **1.4.9** · cache: **si-v14**
 
 Aplikacija se ne instalira iz App Storea. Na iPhoneu je otvaraš u Safariju i
 dodaješ na početni zaslon („Dodaj na početni zaslon”). Radi offline, u
@@ -82,7 +82,7 @@ Fotografija zimske gume (`img/tire-winter.jpg`): **HopsonRoad**,
 Povećaj **isti** broj na tri mjesta:
 
 - `window.APP_VERSION` u `index.html` (i u `tools/template.html`)
-- `VERSION` i `CACHE` u `sw.js` (npr. `'1.4.8'` / `'si-v13'`)
-- `version.json` (`{ "version": "1.4.8", "cache": "si-v13" }`)
+- `VERSION` i `CACHE` u `sw.js` (npr. `'1.4.9'` / `'si-v14'`)
+- `version.json` (`{ "version": "1.4.9", "cache": "si-v14" }`)
 
 Zatim slijedi `tools/PUBLISH.md`.
