@@ -1,6 +1,6 @@
 # Servisni Intervali – upute za iPhone (PWA)
 
-Verzija: **1.4.2** · cache: **si-v7**
+Verzija: **1.4.3** · cache: **si-v8**
 
 Aplikacija se ne instalira iz App Storea. Na iPhoneu je otvaraš u Safariju i
 dodaješ na početni zaslon („Dodaj na početni zaslon”). Radi offline, u
@@ -39,7 +39,7 @@ Ako i dalje ostane stara verzija:
 
 ---
 
-## Podsjetnik za gume (od 1.4.2)
+## Podsjetnik za gume (od 1.4.2, izgled 1.4.3)
 
 Trajna traka na početnom ekranu je uklonjena. Aplikacija pokaže lagano
 nestajuću obavijest na sredini ekrana 7 dana prije roka zamjene (15.11.
@@ -82,7 +82,7 @@ Fotografija zimske gume (`img/tire-winter.jpg`): **HopsonRoad**,
 Povećaj **isti** broj na tri mjesta:
 
 - `window.APP_VERSION` u `index.html` (i u `tools/template.html`)
-- `VERSION` i `CACHE` u `sw.js` (npr. `'1.4.2'` / `'si-v7'`)
-- `version.json` (`{ "version": "1.4.2", "cache": "si-v7" }`)
+- `VERSION` i `CACHE` u `sw.js` (npr. `'1.4.3'` / `'si-v8'`)
+- `version.json` (`{ "version": "1.4.3", "cache": "si-v8" }`)
 
 Zatim slijedi `tools/PUBLISH.md`.

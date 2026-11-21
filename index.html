@@ -268,24 +268,35 @@ textarea.inp{min-height:70px}
 @media (max-height:740px){.pmap{min-height:270px}}
 
 /* tyre season toast */
-.tyre-note{position:fixed;inset:0;z-index:90;display:none;align-items:center;justify-content:center;padding:18px;padding-left:max(18px,var(--sal));padding-right:max(18px,var(--sar));background:rgba(4,12,24,.42);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);opacity:0;pointer-events:none}
-.tyre-note.on,.tyre-note.out{display:flex}
+.tyre-note{position:fixed;inset:0;z-index:90;display:none;align-items:center;justify-content:center;padding:16px;padding-left:max(16px,var(--sal));padding-right:max(16px,var(--sar));background:rgba(4,12,24,.42);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);opacity:0;pointer-events:none;transition:opacity .6s cubic-bezier(.22,.7,.25,1)}
+.tyre-note.prep,.tyre-note.on,.tyre-note.out{display:flex}
+.tyre-note.prep{opacity:0;pointer-events:none}
 .tyre-note.on{opacity:1;pointer-events:auto}
-.tyre-note.out{opacity:0;pointer-events:none}
-.tyre-note-card{width:min(360px,100%);border-radius:22px;padding:18px 16px 14px;background:linear-gradient(180deg,#142038,#0a141f);border:1px solid rgba(125,211,252,.28);box-shadow:0 16px 44px rgba(0,0,0,.48),0 0 22px rgba(56,189,248,.14),inset 0 1px 0 rgba(255,255,255,.1);-webkit-backdrop-filter:blur(22px) saturate(1.25);backdrop-filter:blur(22px) saturate(1.25);transform:scale(.92) translateY(12px);opacity:0;display:flex;flex-direction:column;gap:12px}
+.tyre-note.out{opacity:0;pointer-events:none;transition-duration:.8s}
+.tyre-note-card{position:relative;overflow:hidden;width:92%;max-width:360px;min-height:210px;border-radius:22px;border:1px solid rgba(125,211,252,.4);box-shadow:0 0 16px rgba(56,189,248,.16),0 16px 44px rgba(0,0,0,.48),inset 0 1px 0 rgba(255,255,255,.1);background:#0a162d;padding:0;transform:scale(.92) translateY(12px);opacity:0;transition:opacity .6s cubic-bezier(.22,.7,.25,1),transform .6s cubic-bezier(.22,.7,.25,1)}
 .tyre-note.on .tyre-note-card{transform:scale(1) translateY(0);opacity:1}
-.tyre-note.out .tyre-note-card{transform:scale(.96) translateY(-8px);opacity:0}
-.tyre-note,.tyre-note-card{transition:opacity .5s cubic-bezier(.22,.7,.25,1),transform .5s cubic-bezier(.22,.7,.25,1)}
-.tyre-note-top{display:flex;align-items:center;gap:11px}
-.tyre-note-ico{width:42px;height:42px;border-radius:14px;flex:none;display:grid;place-items:center;color:#fff;background:linear-gradient(180deg,#60a5fa,#2563eb);box-shadow:0 4px 14px rgba(37,99,235,.4)}
-.tyre-note-ico svg{width:22px;height:22px}
-.tyre-note-title{font-size:17px;font-weight:750;color:#fff;letter-spacing:-.2px}
-.tyre-note-sub{font-size:13px;color:#bae6fd;font-weight:600;margin-top:1px}
-.tyre-note-text{font-size:14.5px;color:#e2e8f0;line-height:1.4}
-.tyre-note-actions{display:flex;gap:8px;margin-top:2px}
-.tyre-note-actions .btn{height:42px;font-size:13.5px;padding:0 10px;width:auto;flex:1}
-@media (max-width:390px){.tyre-note{padding:16px}.tyre-note-card{border-radius:20px}}
-@media (prefers-reduced-motion:reduce){.tyre-note,.tyre-note-card{transition:none}.tyre-note-card{transform:none}}
+.tyre-note.out .tyre-note-card{transform:scale(.96) translateY(-8px);opacity:0;transition-duration:.8s}
+.tyre-note-card .bg{position:absolute;inset:0;background-size:cover;background-position:right center;filter:brightness(.55) saturate(.8)}
+.tyre-note-card .shade{position:absolute;inset:0;background:linear-gradient(100deg,rgba(10,22,45,.92) 0%,rgba(10,22,45,.7) 45%,rgba(10,22,45,.15) 100%)}
+.tyre-note-card .flake{position:absolute;top:42%;right:4px;transform:translateY(-50%);width:120px;height:120px;color:#dbeafe;opacity:.9;filter:drop-shadow(0 0 12px rgba(147,197,253,.8));pointer-events:none;z-index:1}
+.tyre-note-card .flake svg{width:100%;height:100%;display:block}
+.tyre-note-card .body{position:relative;z-index:2;padding:20px 16px 16px;display:flex;flex-direction:column;min-height:210px;box-sizing:border-box}
+.tyre-note-card .rh{display:flex;align-items:center;gap:12px;padding-right:72px}
+.tyre-note-card .ric{width:46px;height:46px;border-radius:14px;flex:none;display:grid;place-items:center;background:linear-gradient(180deg,#60a5fa,#2563eb);box-shadow:0 4px 14px rgba(37,99,235,.45);color:#fff}
+.tyre-note-card .ric svg{width:26px;height:26px}
+.tyre-note-card .rt{font-size:22px;font-weight:750;color:#fff;letter-spacing:-.2px;line-height:1.15;text-shadow:0 1px 8px rgba(0,0,0,.45)}
+.tyre-note-card .rd{font-size:16px;color:#e2e8f0;margin-top:12px;line-height:1.4;padding-right:76px;text-shadow:0 1px 8px rgba(0,0,0,.45)}
+.tyre-note-card .rk{display:block;margin-top:6px;font-weight:650;color:#f8fafc}
+.tyre-note-actions{display:flex;gap:8px;margin-top:auto;padding-top:18px}
+.tyre-note-actions .btn{height:44px;font-size:14px;padding:0 10px;width:auto;flex:1}
+.tyre-note-actions .btn-ghost{background:rgba(8,18,36,.55);border:1px solid rgba(186,230,253,.4);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);color:#fff}
+@media (max-width:390px){.tyre-note{padding:14px}.tyre-note-card{border-radius:20px}}
+@media (prefers-reduced-motion:reduce){
+  .tyre-note{transition:opacity .4s ease}
+  .tyre-note.out{transition-duration:.4s}
+  .tyre-note-card{transform:none;transition:opacity .4s ease}
+  .tyre-note.on .tyre-note-card,.tyre-note.out .tyre-note-card{transform:none;transition-duration:.4s}
+}
 
 
   </style>
@@ -297,8 +308,8 @@ textarea.inp{min-height:70px}
 <div id="sheet" class="hidden"></div>
 <div id="tyreNote" class="tyre-note" aria-hidden="true"></div>
 <script>
-// ===== Servisni Intervali 1.4.2 =====
-window.APP_VERSION = '1.4.2';
+// ===== Servisni Intervali 1.4.3 =====
+window.APP_VERSION = '1.4.3';
 (function () {
   if (window.__SI_NOW != null || window.__SI_NO_SPLASH) { const s = document.getElementById('splash'); if (s) s.remove(); }
 
@@ -717,19 +728,18 @@ function tyreIntervalMs(days) {
   return 24 * 60 * 60 * 1000;
 }
 function tyreDaysLabel(n) {
-  if (n > 1) return 'za ' + n + ' dana';
-  if (n === 1) return 'sutra';
+  if (n > 1) return 'još ' + n + ' dana';
+  if (n === 1) return 'još 1 dan';
   if (n === 0) return 'danas';
   const a = -n; return a === 1 ? 'kasni 1 dan' : 'kasni ' + a + ' dana';
 }
 function tyreCopy(info) {
   const zim = info.season === 'winter';
   const rok = fmtDate(info.deadline.getFullYear() + '-' + String(info.deadline.getMonth() + 1).padStart(2, '0') + '-' + String(info.deadline.getDate()).padStart(2, '0'));
-  const title = zim ? 'Zimske gume' : 'Ljetne gume';
-  const sub = zim ? 'Podsjetnik za zamjenu' : 'Podsjetnik za zamjenu';
-  const when = info.days < 0 ? ('Rok je bio ' + rok) : ('Rok je ' + rok);
-  const text = (zim ? 'Vrijeme je za zimske gume. ' : 'Vrijeme je za ljetne gume. ') + when + ' — ' + tyreDaysLabel(info.days) + '.';
-  return { title, sub, text, zim };
+  const title = 'Podsjetnik za gume';
+  const lead = zim ? 'Vrijeme je za zimske gume (od 15.11.).' : 'Vrijeme je za ljetne gume (od 15.04.).';
+  const rokLine = 'Rok: ' + rok + ' · ' + tyreDaysLabel(info.days);
+  return { title, lead, rokLine, text: lead + ' ' + rokLine, zim };
 }
 function shouldShowTyrePopup() {
   if (!S.prefs.notifTyres) return false;
@@ -763,12 +773,22 @@ function hideTyrePopup(mode) {
   clearTimeout(tyreNoteTimer);
   tyreNoteOpen = false;
   if (mode !== 'done') markTyreShown();
-  const finish = () => { el.classList.remove('on', 'out'); el.innerHTML = ''; el.setAttribute('aria-hidden', 'true'); tyreNoteInfo = null; };
-  if (reducedMotion()) finish();
-  else {
-    el.classList.remove('on'); el.classList.add('out');
-    setTimeout(finish, 520);
-  }
+  let finished = false;
+  const finish = () => {
+    if (finished) return; finished = true;
+    el.removeEventListener('transitionend', onEnd);
+    clearTimeout(hideFb);
+    el.classList.remove('on', 'out', 'prep'); el.innerHTML = ''; el.setAttribute('aria-hidden', 'true'); tyreNoteInfo = null;
+  };
+  const onEnd = (ev) => {
+    if (ev.target !== el) return;
+    if (ev.propertyName && ev.propertyName !== 'opacity') return;
+    finish();
+  };
+  el.classList.remove('on', 'prep');
+  el.classList.add('out');
+  el.addEventListener('transitionend', onEnd);
+  const hideFb = setTimeout(finish, reducedMotion() ? 550 : 1000);
 }
 function showTyrePopup() {
   const info = tyreWindow(); if (!info) return;
@@ -777,15 +797,26 @@ function showTyrePopup() {
   clearTimeout(tyreNoteTimer);
   tyreNoteOpen = true; tyreNoteInfo = info;
   markTyreShown();
+  const img = c.zim ? 'winter' : 'summer';
+  const ico = c.zim ? 'snow' : 'sun';
   el.innerHTML = `<div class="tyre-note-card" role="dialog" aria-labelledby="tyreNoteTitle" aria-describedby="tyreNoteText">
-    <div class="tyre-note-top"><div class="tyre-note-ico">${ic(c.zim ? 'snow' : 'sun', 1.4)}</div><div><div class="tyre-note-title" id="tyreNoteTitle">${c.title}</div><div class="tyre-note-sub">${c.sub}</div></div></div>
-    <div class="tyre-note-text" id="tyreNoteText">${esc(c.text)}</div>
-    <div class="tyre-note-actions"><button class="btn btn-ghost" data-a="tyreSnooze">Podsjeti me kasnije</button><button class="btn btn-primary" data-a="tyreDone">Gume zamijenjene</button></div>
+    <div class="bg" style="background-image:url('img/${img}-road.jpg')"></div>
+    <div class="shade"></div>
+    <div class="flake">${ic(ico, 1.4)}</div>
+    <div class="body">
+      <div class="rh"><div class="ric">${ic(ico, 2)}</div><div class="rt" id="tyreNoteTitle">${c.title}</div></div>
+      <div class="rd" id="tyreNoteText">${esc(c.lead)}<span class="rk">${esc(c.rokLine)}</span></div>
+      <div class="tyre-note-actions"><button class="btn btn-ghost" data-a="tyreSnooze">Podsjeti me kasnije</button><button class="btn btn-primary" data-a="tyreDone">Gume zamijenjene</button></div>
+    </div>
   </div>`;
   el.setAttribute('aria-hidden', 'false');
-  el.classList.remove('out', 'on');
-  const open = () => el.classList.add('on');
-  if (reducedMotion()) open(); else requestAnimationFrame(() => requestAnimationFrame(open));
+  el.classList.remove('on', 'out');
+  el.classList.add('prep');
+  void el.offsetWidth;
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    if (!tyreNoteOpen) return;
+    el.classList.add('on');
+  }));
   const fade = Number(window.__SI_TYRE_FADE_MS); const ms = Number.isFinite(fade) && fade >= 0 ? fade : 7000;
   const arm = () => { if (!tyreNoteOpen) return; clearTimeout(tyreNoteTimer); tyreNoteTimer = setTimeout(() => hideTyrePopup('snooze'), ms); };
   arm();
