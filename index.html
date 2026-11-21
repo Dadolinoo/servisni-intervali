@@ -160,7 +160,7 @@ input[type=date].inp{min-height:42px}
 .inp.mono{font-family:ui-monospace,Menlo,monospace}
 textarea.inp{min-height:70px}
 .hint{font-size:11.5px;color:#7c8ba1;margin-top:3px}
-.types{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.types{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
 .types button{padding:9px 2px;border-radius:12px;border:1px solid rgba(125,211,252,.18);background:rgba(7,21,37,.45);display:flex;flex-direction:column;align-items:center;gap:3px;font-size:12px;font-weight:650;color:#cbd5e1}
 .types button span{font-size:22px}
 .types button.on{background:rgba(59,130,246,.22);border-color:rgba(96,165,250,.6);color:#fff;box-shadow:0 0 10px rgba(59,130,246,.3)}
@@ -320,8 +320,8 @@ textarea.inp{min-height:70px}
 <div id="sheet" class="hidden"></div>
 <div id="tyreNote" class="tyre-note" aria-hidden="true"></div>
 <script>
-// ===== Servisni Intervali 1.4.9 =====
-window.APP_VERSION = '1.4.9';
+// ===== Servisni Intervali 1.5.0 =====
+window.APP_VERSION = '1.5.0';
 (function () {
   if (window.__SI_NOW != null || window.__SI_NO_SPLASH) { const s = document.getElementById('splash'); if (s) s.remove(); }
 
@@ -469,20 +469,37 @@ const PARTS = [
   { key: 'svjecice', name: 'Svjećice', ico: '⚡', brands: ['Bosch', 'NGK', 'Denso', 'Champion', 'Beru', 'OEM'], spec: 'Oznaka' },
   { key: 'set_remen_pumpa', name: 'Set zupčastog remena s pumpom vode', ico: '➰', brands: ['Gates', 'Contitech', 'SKF', 'INA', 'Dayco'], spec: 'Oznaka (komplet)' },
   { key: 'set_mikro_remen', name: 'Set mikro remena', ico: '🔗', brands: ['Gates', 'Contitech', 'SKF', 'INA', 'Dayco'], spec: 'Oznaka' },
-  { key: 'grijaci', name: 'Grijači motora', ico: '🔥', brands: ['Bosch', 'NGK', 'Beru', 'Denso', 'Champion'], spec: 'Oznaka', qty: true }
+  { key: 'grijaci', name: 'Grijači motora', ico: '🔥', brands: ['Bosch', 'NGK', 'Beru', 'Denso', 'Champion'], spec: 'Oznaka', qty: true },
+  { key: 'filter_hidraulike', name: 'Filter hidraulike', ico: '🧰', brands: FILTERS, spec: 'Oznaka', machine: true },
+  { key: 'ulje_hidraulike', name: 'Ulje hidraulike', ico: '💧', brands: ['Castrol', 'Mobil', 'Shell', 'Motul', 'Liqui Moly', 'Total', 'Fuchs', 'INA', 'OEM'], spec: 'Naziv', hydOil: true, machine: true },
+  { key: 'gusjenice_kotaci', name: 'Izmjena gusjenica / kotača', ico: '⛓️', machine: true, trackWheel: true },
+  { key: 'ventili', name: 'Podešavanje ventila glave motora', ico: '🔩', valves: true }
 ];
+const HYDRAULIC_GRADES = ['HV 32', 'HV 46', 'HV 68', 'HLP 32', 'HLP 46', 'HLP 68', '10W', '10W-30 UTTO'];
 const GRADES = ['0W-16', '0W-20', '0W-30', '0W-40', '5W-20', '5W-30', '5W-40', '10W-40', '15W-40', '20W-50'];
 const SERVICE_TYPES = [['regular', 'Redovni servis'], ['small', 'Mali servis'], ['big', 'Veliki servis'], ['tyres', 'Zamjena guma'], ['repair', 'Popravak'], ['other', 'Ostalo']];
 function serviceTitle(s) { return s.title || (SERVICE_TYPES.find(t => t[0] === s.type) || [0, 'Servis'])[1]; }
-function partLabel(p) { return p.key === 'ulje' && p.grade ? 'Ulje ' + p.grade : p.name; }
+function fmtValve(x) { if (x === '' || x === undefined || x === null) return '—'; return String(x).replace('.', ','); }
+function partLabel(p) {
+  if (p.key === 'ulje' && p.grade && p.grade !== 'Drugo') return 'Ulje ' + p.grade;
+  if (p.key === 'ulje_hidraulike' && p.grade) {
+    const g = p.grade === 'Drugo' ? (p.gradeOther || 'Drugo') : p.grade;
+    return 'Ulje hidraulike' + (g ? ' ' + g : '');
+  }
+  if (p.key === 'gusjenice_kotaci' && p.kind) return p.kind === 'Kotači' ? 'Izmjena kotača' : 'Izmjena gusjenica';
+  if (p.key === 'ventili' && (p.intake || p.exhaust)) return 'Ventili U ' + fmtValve(p.intake) + ' / I ' + fmtValve(p.exhaust);
+  return p.name;
+}
 function partSummary(p) {
   const brand = p.brand === 'Drugo' ? p.brandOther : p.brand;
-  return [brand, p.grade, p.liters ? String(p.liters).replace('.', ',') + ' L' : '', p.qty ? String(p.qty) + ' kom' : '', p.spec].filter(Boolean).join(' · ');
+  const grade = p.grade === 'Drugo' ? p.gradeOther : p.grade;
+  const valve = (p.intake || p.exhaust) ? ('U ' + fmtValve(p.intake) + ' / I ' + fmtValve(p.exhaust)) : '';
+  return [brand, grade, p.kind, p.liters ? String(p.liters).replace('.', ',') + ' L' : '', p.qty ? String(p.qty) + ' kom' : '', valve, p.spec].filter(Boolean).join(' · ');
 }
 function emptyServiceForm(v) {
   return {
     type: 'regular', date: new Date().toISOString().slice(0, 10), mileage: v ? (Number(v.mileage) || '') : '', workHours: v && hasHours(v) ? v.workHours : '', note: '',
-    parts: PARTS.map(p => ({ key: p.key, name: p.name, on: false, brand: '', brandOther: '', spec: '', grade: '', liters: '', qty: '', price: '' })),
+    parts: PARTS.map(p => ({ key: p.key, name: p.name, on: false, brand: '', brandOther: '', spec: '', grade: '', gradeOther: '', liters: '', qty: '', kind: '', intake: '', exhaust: '', price: '' })),
     custom: []
   };
 }
@@ -497,11 +514,16 @@ function serviceToForm(s, v) {
   (s.parts || []).forEach(p => {
     if (p.key && known[p.key]) {
       const fp = f.parts.find(x => x.key === p.key); if (!fp) return;
-      fp.on = true; fp.spec = p.spec || ''; fp.grade = p.grade || ''; fp.liters = p.liters || ''; fp.qty = p.qty || '';
+      fp.on = true; fp.spec = p.spec || ''; fp.liters = p.liters || ''; fp.qty = p.qty || '';
+      fp.kind = p.kind || ''; fp.intake = p.intake || ''; fp.exhaust = p.exhaust || '';
       fp.price = (p.price === 0 || p.price) ? p.price : '';
       const brands = known[p.key].brands || [];
       if (p.brand && brands.indexOf(p.brand) >= 0) fp.brand = p.brand;
       else if (p.brand) { fp.brand = 'Drugo'; fp.brandOther = p.brand; }
+      const grades = known[p.key].hydOil ? HYDRAULIC_GRADES : GRADES;
+      if (p.grade && grades.indexOf(p.grade) >= 0) fp.grade = p.grade;
+      else if (p.grade) { fp.grade = 'Drugo'; fp.gradeOther = p.grade; }
+      else fp.grade = '';
     } else {
       f.custom.push({ name: p.name || 'Stavka', spec: p.spec || '', price: (p.price === 0 || p.price) ? p.price : '' });
     }
@@ -525,6 +547,8 @@ function openServiceEdit(vid, sid) {
 function lsGet(k, d) { try { const v = JSON.parse(localStorage.getItem(k)); return v === null || v === undefined ? d : v; } catch (e) { return d; } }
 function lsSet(k, v) { localStorage.setItem(k, JSON.stringify(v)); }
 function isCar(t) { return !t || t === 'Automobil'; }
+function isMachine(t) { return t === 'Bager' || t === 'Traktor'; }
+function hasEngineNo(t) { return isMachine(t) || t === 'ATV' || t === 'Motocikl'; }
 function hasHours(v) { return v && v.workHours !== '' && v.workHours !== null && v.workHours !== undefined && !isNaN(Number(v.workHours)); }
 function usageText(v) { if (!v) return ''; if (!isCar(v.type) && hasHours(v)) return fmtNum(v.workHours) + ' h'; return fmtNum(v.mileage) + ' km'; }
 function serviceUsage(s) { if (s && s.workHours !== '' && s.workHours !== null && s.workHours !== undefined) return fmtNum(s.workHours) + ' h'; return fmtNum(s ? s.mileage : 0) + ' km'; }
@@ -532,14 +556,14 @@ function bumpVehicleFromServices(v) {
   const maxKm = (v.services || []).reduce((m, s) => Math.max(m, Number(s.mileage) || 0), 0);
   if (maxKm > (Number(v.mileage) || 0)) v.mileage = maxKm;
 }
-const TYPES = [{ value: 'Automobil', icon: '🚗' }, { value: 'Bager', icon: '🏗️' }, { value: 'Traktor', icon: '🚜' }, { value: 'ATV', icon: '🏍️' }];
+const TYPES = [{ value: 'Automobil', icon: '🚗' }, { value: 'Bager', icon: '🏗️' }, { value: 'Traktor', icon: '🚜' }, { value: 'ATV', icon: '🚙' }, { value: 'Motocikl', icon: '🏍️' }];
 function typeIcon(t) { const x = TYPES.find(y => y.value === (t || 'Automobil')); return x ? x.icon : '🚗'; }
 
 function normalizeVehicle(v) {
   v = v || {};
   if (!v.type) v.type = 'Automobil';
   if (v.tireTorque !== undefined) { if (!v.tireTorqueAlu && v.tireTorque) v.tireTorqueAlu = v.tireTorque; delete v.tireTorque; }
-  ['tireTorqueAlu', 'tireTorqueSteel', 'workHours', 'plate', 'bodyType', 'serviceInterval', 'insuranceDate', 'registrationDate', 'notes'].forEach(k => { if (v[k] === undefined) v[k] = ''; });
+  ['tireTorqueAlu', 'tireTorqueSteel', 'workHours', 'plate', 'bodyType', 'serviceInterval', 'insuranceDate', 'registrationDate', 'notes', 'engineNo'].forEach(k => { if (v[k] === undefined) v[k] = ''; });
   if (!Array.isArray(v.services)) v.services = [];
   if (!Array.isArray(v.documents)) v.documents = [];
   if (!v.id) v.id = Date.now() + Math.floor(Math.random() * 1000);
@@ -1052,6 +1076,7 @@ function vVehicle() {
   h += `<div class="glass info-list">` + row('gauge', 'Kilometraža', fmtNum(v.mileage) + ' km', 'blue');
   if (!isCar(v.type) && hasHours(v)) h += row('clock', 'Radni sati', fmtNum(v.workHours) + ' h', 'blue');
   h += row('lines', 'Šasija', esc(v.vin || '—'), 'mono');
+  if (hasEngineNo(v.type)) h += row('wrench', 'Broj / oznaka motora', esc(v.engineNo || '—'));
   if (v.plate) h += row('doc', 'Registracijska oznaka', `<span class="plate" style="margin-top:2px">${esc(v.plate)}</span>`);
   h += row('cal', 'Godište', esc(v.year || '—')) + `</div>`;
   h += `<div><div class="sec-h">Gume</div><div class="tyre-grid" style="margin-top:6px">${tyreCard(v, 'summer')}${tyreCard(v, 'winter')}</div></div>`;
@@ -1129,6 +1154,7 @@ function vAddVehicle() {
     <div class="grid2">${field('Marka', inp('form.brand', f.brand, 'placeholder="npr. Volkswagen" autocomplete="off"'))}${field('Model', inp('form.model', f.model, 'placeholder="npr. Tiguan R-line" autocomplete="off"'))}</div>
     <div class="grid2">${field('Godište', inp('form.year', f.year, 'inputmode="numeric" placeholder="npr. 2020"'))}${field('Registracijska oznaka', inp('form.plate', f.plate, 'placeholder="npr. ZG 1234-AB" autocapitalize="characters" style="text-transform:uppercase"'))}</div>
     ${field(isCar(f.type) ? 'Broj šasije (VIN) *' : 'Broj šasije / serijski broj', `<input class="inp mono" data-f="form.vin" value="${esc(f.vin)}" autocapitalize="characters" placeholder="17 znakova">`)}
+    ${hasEngineNo(f.type) ? field('Broj / oznaka motora', inp('form.engineNo', f.engineNo, 'placeholder="npr. 4TNV98 ili broj motora"')) : ''}
     <div class="grid2">${field('Kilometraža (km)', inp('form.mileage', f.mileage, 'inputmode="numeric" placeholder="npr. 121000"'))}${isCar(f.type) ? field('Servisni interval (km)', inp('form.serviceInterval', f.serviceInterval, 'inputmode="numeric" placeholder="npr. 15000"')) : field('Radni sati (h)', inp('form.workHours', f.workHours, 'inputmode="decimal"'))}</div>
   </div>`;
   h += `<div class="glass form-card"><h3>${ic('cal')} Datumi</h3><div class="grid2">${field('Registracija vrijedi do', inp('form.registrationDate', f.registrationDate, 'type="date"'))}${field('Osiguranje vrijedi do', inp('form.insuranceDate', f.insuranceDate, 'type="date"'))}</div></div>`;
@@ -1155,14 +1181,24 @@ function partRow(p, i, custom) {
   h += `<div class="pbody">`;
   if (custom) {
     h += field('Naziv stavke', inp(base + 'name', p.name, 'placeholder="npr. Brisači"')) + field('Opis / oznaka', inp(base + 'spec', p.spec, 'placeholder="opcionalno"'));
+  } else if (def.trackWheel) {
+    h += `<div><span class="flabel">Što se mijenja</span><div class="chips">${['Gusjenice', 'Kotači'].map(k => `<button type="button" class="chipx ${p.kind === k ? 'on' : ''}" data-a="partKind" data-i="${i}" data-v="${k}">${k}</button>`).join('')}</div></div>`;
+    h += field('Napomena', inp(base + 'spec', p.spec, 'placeholder="opcionalno"'));
+  } else if (def.valves) {
+    h += `<div class="grid2">${field('Usisni (mm)', inp(base + 'intake', p.intake, 'inputmode="decimal" placeholder="npr. 0,20"'))}${field('Ispušni (mm)', inp(base + 'exhaust', p.exhaust, 'inputmode="decimal" placeholder="npr. 0,40"'))}</div>`;
+    h += field('Napomena', inp(base + 'spec', p.spec, 'placeholder="opcionalno"'));
   } else {
-    const brandSel = `<select class="inp" data-f="${base}brand" data-rr="1"><option value="">Odaberi marku</option>${def.brands.map(b => `<option ${p.brand === b ? 'selected' : ''}>${b}</option>`).join('')}<option value="Drugo" ${p.brand === 'Drugo' ? 'selected' : ''}>Drugo…</option></select>`;
-    if (def.oil) h += `<div class="grid2">${field('Marka', brandSel)}${field('Gradacija', `<select class="inp" data-f="${base}grade" data-rr="1"><option value="">Odaberi</option>${GRADES.map(g => `<option ${p.grade === g ? 'selected' : ''}>${g}</option>`).join('')}</select>`)}</div>`;
-    else h += field('Marka', brandSel);
+    const brandSel = `<select class="inp" data-f="${base}brand" data-rr="1"><option value="">Odaberi marku</option>${(def.brands || []).map(b => `<option ${p.brand === b ? 'selected' : ''}>${b}</option>`).join('')}<option value="Drugo" ${p.brand === 'Drugo' ? 'selected' : ''}>Drugo…</option></select>`;
+    if (def.oil || def.hydOil) {
+      const grades = def.hydOil ? HYDRAULIC_GRADES : GRADES;
+      const gradeSel = `<select class="inp" data-f="${base}grade" data-rr="1"><option value="">Odaberi</option>${grades.map(g => `<option ${p.grade === g ? 'selected' : ''}>${g}</option>`).join('')}${def.hydOil ? `<option value="Drugo" ${p.grade === 'Drugo' ? 'selected' : ''}>Drugo…</option>` : ''}</select>`;
+      h += `<div class="grid2">${field('Marka', brandSel)}${field('Gradacija', gradeSel)}</div>`;
+    } else h += field('Marka', brandSel);
     if (p.brand === 'Drugo') h += field('Upiši marku', inp(base + 'brandOther', p.brandOther, 'placeholder="Marka"'));
-    if (def.oil) {
-      const std = ['1', '4', '5'];
-      h += field('Naziv ulja', inp(base + 'spec', p.spec, 'placeholder="' + esc(def.spec) + '"'));
+    if (p.grade === 'Drugo') h += field('Upiši gradaciju', inp(base + 'gradeOther', p.gradeOther, 'placeholder="Gradacija"'));
+    if (def.oil || def.hydOil) {
+      const std = def.hydOil ? ['5', '10', '20'] : ['1', '4', '5'];
+      h += field(def.hydOil ? 'Naziv ulja' : 'Naziv ulja', inp(base + 'spec', p.spec, 'placeholder="' + esc(def.spec) + '"'));
       h += `<div><span class="flabel">Litraža</span><div class="chips">${std.map(l => `<button class="chipx ${String(p.liters) === l ? 'on' : ''}" data-a="liters" data-i="${i}" data-v="${l}">${l} L</button>`).join('')}<input class="inp" style="width:104px;min-height:34px;padding:5px 9px;font-size:14px" data-f="${base}liters" value="${std.includes(String(p.liters)) ? '' : esc(p.liters)}" inputmode="decimal" placeholder="Drugo (L)"></div></div>`;
     } else h += field(def.spec.split(' (')[0], inp(base + 'spec', p.spec, 'placeholder="' + esc(def.spec.includes('(') ? def.spec.split('(')[1].replace(')', '') : '') + '"'));
     if (def.qty) {
@@ -1187,7 +1223,8 @@ function vAddService() {
   h += `<div class="grid2">${field('Datum', inp('sform.date', f.date, 'type="date"'))}${field('Kilometraža (km)', inp('sform.mileage', f.mileage, 'inputmode="numeric" placeholder="npr. 121000"'))}</div>`;
   h += `<div class="grid2">${field('Vrsta servisa', `<select class="inp" data-f="sform.type">${SERVICE_TYPES.map(t => `<option value="${t[0]}" ${f.type === t[0] ? 'selected' : ''}>${t[1]}</option>`).join('')}</select>`)}${v && !isCar(v.type) ? field('Radni sati (h)', inp('sform.workHours', f.workHours, 'inputmode="decimal"')) : '<div></div>'}</div>`;
   h += `<div class="sec-h">Dijelovi i radovi</div>`;
-  f.parts.forEach((p, i) => { h += partRow(p, i, false); });
+  const machine = !!(v && isMachine(v.type));
+  f.parts.forEach((p, i) => { const def = PARTS.find(x => x.key === p.key); if (def && def.machine && !machine && !p.on) return; h += partRow(p, i, false); });
   f.custom.forEach((p, i) => { h += partRow(p, i, true); });
   h += `<button class="add-row" data-a="addCustom">+ Dodaj stavku</button>`;
   h += field('Napomena', `<textarea class="inp" data-f="sform.note" placeholder="opcionalno">${esc(f.note)}</textarea>`);
@@ -1379,7 +1416,7 @@ function shrinkImage(src, max, cb) {
 }
 function openVehicleForm(v) {
   S.editingId = v ? v.id : null;
-  const f = { type: 'Automobil', brand: '', model: '', year: '', vin: '', plate: '', mileage: '', workHours: '', serviceInterval: '', registrationDate: '', insuranceDate: '', bodyType: '', photo: '', notes: '', tires: { summer: emptyTire(), winter: emptyTire() } };
+  const f = { type: 'Automobil', brand: '', model: '', year: '', vin: '', plate: '', mileage: '', workHours: '', serviceInterval: '', engineNo: '', registrationDate: '', insuranceDate: '', bodyType: '', photo: '', notes: '', tires: { summer: emptyTire(), winter: emptyTire() } };
   if (v) Object.keys(f).forEach(k => { if (v[k] !== undefined) f[k] = k === 'tires' ? JSON.parse(JSON.stringify(v.tires)) : v[k]; });
   S.form = f; go('addVehicle');
 }
@@ -1390,7 +1427,7 @@ function saveVehicle() {
   ['summer', 'winter'].forEach(k => { f.tires[k].size = fmtDim(f.tires[k].size); f.tires[k].dot = fmtDOT(f.tires[k].dot); });
   const data = JSON.parse(JSON.stringify(f));
   data.brand = data.brand.trim(); data.model = data.model.trim();
-  data.plate = String(data.plate || '').toUpperCase().trim(); data.vin = String(data.vin || '').toUpperCase().trim();
+  data.plate = String(data.plate || '').toUpperCase().trim(); data.vin = String(data.vin || '').toUpperCase().trim(); data.engineNo = String(data.engineNo || '').trim();
   data.mileage = Number(String(data.mileage).replace(/\D/g, '')) || 0;
   data.serviceInterval = String(data.serviceInterval || '').replace(/\D/g, '');
   if (isCar(data.type)) data.workHours = '';
@@ -1401,7 +1438,7 @@ function saveVehicle() {
 }
 function saveService() {
   const v = sel(); if (!v) return; const f = S.sform;
-  const parts = f.parts.filter(p => p.on).map(p => ({ key: p.key, name: p.name, brand: p.brand === 'Drugo' ? (p.brandOther || '') : p.brand, spec: p.spec, grade: p.grade || '', liters: p.liters || '', qty: p.qty || '', price: p.price === '' ? '' : (num(p.price) || 0) }));
+  const parts = f.parts.filter(p => p.on).map(p => ({ key: p.key, name: p.name, brand: p.brand === 'Drugo' ? (p.brandOther || '') : p.brand, spec: p.spec, grade: p.grade === 'Drugo' ? (p.gradeOther || '') : (p.grade || ''), liters: p.liters || '', qty: p.qty || '', kind: p.kind || '', intake: p.intake || '', exhaust: p.exhaust || '', price: p.price === '' ? '' : (num(p.price) || 0) }));
   f.custom.filter(p => p.name || p.price).forEach(p => parts.push({ key: 'custom', name: p.name || 'Stavka', brand: '', spec: p.spec, grade: '', liters: '', price: p.price === '' ? '' : (num(p.price) || 0) }));
   if (!parts.length && !confirm('Nisi odabrao nijedan dio. Spremiti servis bez stavki?')) return;
   const hours = (!isCar(v.type) && f.workHours !== '') ? Number(String(f.workHours).replace(',', '.')) : '';
@@ -1434,7 +1471,7 @@ function exportPDF() {
   const tyre = (k, n) => { const t = v.tires[k]; return `<tr><th>${n}</th><td>${e(fmtDim(t.size) || '—')}</td><td>${e(fmtDOT(t.dot) || '—')}</td><td>${e(pressLine(t))}</td><td>${t.torque ? e(t.torque) + ' Nm' : '—'}</td></tr>`; };
   const total = v.services.reduce((a, s) => a + (parseFloat(s.total) || 0), 0);
   const html = `<html><head><meta charset="UTF-8"><title>Izvještaj - ${e(v.brand)} ${e(v.model)}</title><style>body{font-family:Arial,sans-serif;padding:36px;color:#111}h1{color:#1e40af}table{width:100%;border-collapse:collapse;margin-top:12px}th,td{border:1px solid #ddd;padding:7px;text-align:left;font-size:13px;vertical-align:top}th{background:#f1f5f9}small{color:#555}.total{font-size:1.3em;font-weight:bold;margin-top:16px}</style></head><body>
-  <h1>Izvještaj o vozilu</h1><p><strong>${e(v.brand)} ${e(v.model)}</strong>${v.plate ? ' · ' + e(v.plate) : ''}</p><p>Tip vozila: ${e(v.type || 'Automobil')}<br>Broj šasije: ${e(v.vin || '—')}<br>Kilometraža: ${e(fmtNum(v.mileage))} km${(!isCar(v.type) && hasHours(v)) ? '<br>Radni sati: ' + e(fmtNum(v.workHours)) + ' h' : ''}<br>Godište: ${e(v.year || '—')}<br>Registracija do: ${fmtDate(v.registrationDate)}<br>Osiguranje do: ${fmtDate(v.insuranceDate)}</p>
+  <h1>Izvještaj o vozilu</h1><p><strong>${e(v.brand)} ${e(v.model)}</strong>${v.plate ? ' · ' + e(v.plate) : ''}</p><p>Tip vozila: ${e(v.type || 'Automobil')}<br>Broj šasije: ${e(v.vin || '—')}${hasEngineNo(v.type) ? '<br>Broj / oznaka motora: ' + e(v.engineNo || '—') : ''}<br>Kilometraža: ${e(fmtNum(v.mileage))} km${(!isCar(v.type) && hasHours(v)) ? '<br>Radni sati: ' + e(fmtNum(v.workHours)) + ' h' : ''}<br>Godište: ${e(v.year || '—')}<br>Registracija do: ${fmtDate(v.registrationDate)}<br>Osiguranje do: ${fmtDate(v.insuranceDate)}</p>
   <h2>Gume</h2><table><tr><th></th><th>Dimenzija</th><th>DOT</th><th>Tlak (prednje / stražnje)</th><th>Stezanje</th></tr>${tyre('summer', 'Ljetne')}${tyre('winter', 'Zimske')}</table>
   <h2>Servisna povijest</h2><table><tr><th>Datum</th><th>Kilometraža / sati</th><th>Servis</th><th>Iznos</th></tr>${sv || '<tr><td colspan="4">Nema servisa</td></tr>'}</table><div class="total">Ukupno: ${fmtMoney(total)}</div><p style="margin-top:36px;font-size:.8em;color:#666">Generirano iz aplikacije Servisni Intervali</p></body></html>`;
   const win = window.open('', '_blank');
@@ -1508,6 +1545,7 @@ document.addEventListener('click', async (ev) => {
     case 'ptog': { const p = S.sform.parts[+el.dataset.i]; p.on = !p.on; render(); break; }
     case 'liters': { const p = S.sform.parts[+el.dataset.i]; p.liters = String(p.liters) === v ? '' : v; render(); break; }
     case 'qty': { const p = S.sform.parts[+el.dataset.i]; p.qty = String(p.qty) === v ? '' : v; render(); break; }
+    case 'partKind': { const p = S.sform.parts[+el.dataset.i]; p.kind = p.kind === v ? '' : v; render(); break; }
     case 'addCustom': S.sform.custom.push({ name: '', spec: '', price: '' }); render(); break;
     case 'rmCustom': S.sform.custom.splice(+el.dataset.i, 1); render(); break;
     case 'saveService': saveService(); break;
@@ -1516,7 +1554,7 @@ document.addEventListener('click', async (ev) => {
     case 'newDoc': { const fromV = S.view === 'vehicle' && !!sel(); S.dform = { name: '', type: 'registration', expiry: '', file: '', vid: fromV ? sel().id : (S.vehicles[0] && S.vehicles[0].id), fromVehicle: fromV }; go('addDocument'); break; }
     case 'saveDoc': { const f = S.dform; if (!f.name.trim()) return alert('Upiši naziv dokumenta'); const vv = S.vehicles.find(x => String(x.id) === String(f.vid)); if (!vv) return; vv.documents.push({ id: Date.now(), name: f.name.trim(), type: f.type, expiry: f.expiry, file: f.file }); persist(); if (f.fromVehicle) { S.selId = vv.id; go('vehicle'); } else go('documents'); toast('Dokument je spremljen'); break; }
     case 'openDoc': { const vv = S.vehicles.find(x => x.id === Number(el.dataset.id)), d = vv && vv.documents.find(x => x.id === Number(el.dataset.did)); if (d && d.file) openDocument(d); else if (d && confirm('Dokument nema privitak. Obrisati ga?')) { vv.documents = vv.documents.filter(x => x !== d); persist(); render(); } break; }
-    case 'shareVin': { const vv = sel(), usage = (!isCar(vv.type) && hasHours(vv)) ? `Radni sati: ${vv.workHours} h` : `Kilometraža: ${fmtNum(vv.mileage)} km`, text = `Vozilo: ${vv.brand} ${vv.model}\nBroj šasije: ${vv.vin || '—'}\n${usage}`; if (navigator.share) navigator.share({ title: 'Šasija vozila', text }).catch(() => {}); else if (navigator.clipboard) navigator.clipboard.writeText(text).then(() => toast('Kopirano')); break; }
+    case 'shareVin': { const vv = sel(), usage = (!isCar(vv.type) && hasHours(vv)) ? `Radni sati: ${vv.workHours} h` : `Kilometraža: ${fmtNum(vv.mileage)} km`, text = `Vozilo: ${vv.brand} ${vv.model}\nBroj šasije: ${vv.vin || '—'}` + (hasEngineNo(vv.type) && vv.engineNo ? `\nBroj / oznaka motora: ${vv.engineNo}` : '') + `\n${usage}`; if (navigator.share) navigator.share({ title: 'Šasija vozila', text }).catch(() => {}); else if (navigator.clipboard) navigator.clipboard.writeText(text).then(() => toast('Kopirano')); break; }
     case 'exportPDF': exportPDF(); break;
     case 'downloadBackup': downloadBackup(); break;
     case 'sheet': S.sheet = v; S.sheetData = {}; render(); break;
