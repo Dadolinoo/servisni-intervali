@@ -278,17 +278,17 @@ textarea.inp{min-height:70px}
 .tyre-note.out .tyre-note-card{transform:scale(.96) translateY(-8px);opacity:0;transition-duration:.8s}
 .tyre-note-card .bg{position:absolute;inset:0;background-size:cover;background-position:right center;filter:brightness(.55) saturate(.8)}
 .tyre-note-card .shade{position:absolute;inset:0;background:linear-gradient(100deg,rgba(10,22,45,.92) 0%,rgba(10,22,45,.7) 45%,rgba(10,22,45,.15) 100%)}
-.tyre-note-card .flake{position:absolute;top:42%;right:4px;transform:translateY(-50%);width:120px;height:120px;color:#dbeafe;opacity:.9;filter:drop-shadow(0 0 12px rgba(147,197,253,.8));pointer-events:none;z-index:1}
+.tyre-note-card .flake{position:absolute;top:10px;right:-6px;transform:none;width:108px;height:108px;color:#dbeafe;opacity:.38;filter:drop-shadow(0 0 10px rgba(147,197,253,.55));pointer-events:none;z-index:0}
 .tyre-note-card .flake svg{width:100%;height:100%;display:block}
-.tyre-note-card .body{position:relative;z-index:2;padding:20px 16px 16px;display:flex;flex-direction:column;min-height:210px;box-sizing:border-box}
-.tyre-note-card .rh{display:flex;align-items:center;gap:12px;padding-right:72px}
-.tyre-note-card .ric{width:46px;height:46px;border-radius:14px;flex:none;display:grid;place-items:center;background:linear-gradient(180deg,#60a5fa,#2563eb);box-shadow:0 4px 14px rgba(37,99,235,.45);color:#fff}
-.tyre-note-card .ric svg{width:26px;height:26px}
-.tyre-note-card .rt{font-size:22px;font-weight:750;color:#fff;letter-spacing:-.2px;line-height:1.15;text-shadow:0 1px 8px rgba(0,0,0,.45)}
-.tyre-note-card .rd{font-size:16px;color:#e2e8f0;margin-top:12px;line-height:1.4;padding-right:76px;text-shadow:0 1px 8px rgba(0,0,0,.45)}
+.tyre-note-card .body{position:relative;z-index:2;padding:18px 14px 14px;display:flex;flex-direction:column;min-height:210px;box-sizing:border-box}
+.tyre-note-card .rh{display:flex;align-items:center;gap:8px;padding-right:0;min-width:0}
+.tyre-note-card .ric{width:36px;height:36px;border-radius:11px;flex:none;display:grid;place-items:center;background:linear-gradient(180deg,#60a5fa,#2563eb);box-shadow:0 4px 12px rgba(37,99,235,.45);color:#fff}
+.tyre-note-card .ric svg{width:20px;height:20px}
+.tyre-note-card .rt{font-size:17px;font-weight:750;color:#fff;letter-spacing:-.3px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 1px 8px rgba(0,0,0,.45)}
+.tyre-note-card .rd{font-size:15px;color:#e2e8f0;margin-top:10px;line-height:1.4;padding-right:96px;text-shadow:0 1px 8px rgba(0,0,0,.45)}
 .tyre-note-card .rk{display:block;margin-top:6px;font-weight:650;color:#f8fafc}
-.tyre-note-actions{display:flex;gap:8px;margin-top:auto;padding-top:18px}
-.tyre-note-actions .btn{height:44px;font-size:14px;padding:0 10px;width:auto;flex:1}
+.tyre-note-actions{display:flex;flex-direction:column;gap:8px;margin-top:auto;padding-top:14px}
+.tyre-note-actions .btn{height:42px;font-size:14.5px;padding:0 12px;width:100%;flex:none;white-space:nowrap}
 .tyre-note-actions .btn-ghost{background:rgba(8,18,36,.55);border:1px solid rgba(186,230,253,.4);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);color:#fff}
 @media (max-width:390px){.tyre-note{padding:14px}.tyre-note-card{border-radius:20px}}
 @media (prefers-reduced-motion:reduce){
@@ -308,8 +308,8 @@ textarea.inp{min-height:70px}
 <div id="sheet" class="hidden"></div>
 <div id="tyreNote" class="tyre-note" aria-hidden="true"></div>
 <script>
-// ===== Servisni Intervali 1.4.3 =====
-window.APP_VERSION = '1.4.3';
+// ===== Servisni Intervali 1.4.4 =====
+window.APP_VERSION = '1.4.4';
 (function () {
   if (window.__SI_NOW != null || window.__SI_NO_SPLASH) { const s = document.getElementById('splash'); if (s) s.remove(); }
 
