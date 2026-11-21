@@ -1,6 +1,6 @@
 # Servisni Intervali – upute za iPhone (PWA)
 
-Verzija: **1.4.0** · cache: **si-v5**
+Verzija: **1.4.2** · cache: **si-v7**
 
 Aplikacija se ne instalira iz App Storea. Na iPhoneu je otvaraš u Safariju i
 dodaješ na početni zaslon („Dodaj na početni zaslon”). Radi offline, u
@@ -39,6 +39,19 @@ Ako i dalje ostane stara verzija:
 
 ---
 
+## Podsjetnik za gume (od 1.4.2)
+
+Trajna traka na početnom ekranu je uklonjena. Aplikacija pokaže lagano
+nestajuću obavijest na sredini ekrana 7 dana prije roka zamjene (15.11.
+zimske, 15.04. ljetne) i do 14 dana nakon roka, sve češće kako se rok
+bliži. **Podsjeti me kasnije** odgađa je; **Gume zamijenjene** gasi
+podsjetnike za tu sezonu. Ako u iPhoneu odobriš obavijesti, ista poruka
+može doći i kao sustavna obavijest dok je aplikacija otvorena. Prave
+pozadinske push obavijesti kad je aplikacija zatvorena na iOS-u zahtijevaju
+poslužitelj i nisu uključene.
+
+---
+
 ## Premještanje podataka (npr. sa starog Netlify URL-a)
 
 Podaci su u lokalnoj pohrani preglednika i **ne prenose se** automatski na
@@ -69,7 +82,7 @@ Fotografija zimske gume (`img/tire-winter.jpg`): **HopsonRoad**,
 Povećaj **isti** broj na tri mjesta:
 
 - `window.APP_VERSION` u `index.html` (i u `tools/template.html`)
-- `VERSION` i `CACHE` u `sw.js` (npr. `'1.4.0'` / `'si-v5'`)
-- `version.json` (`{ "version": "1.4.0", "cache": "si-v5" }`)
+- `VERSION` i `CACHE` u `sw.js` (npr. `'1.4.2'` / `'si-v7'`)
+- `version.json` (`{ "version": "1.4.2", "cache": "si-v7" }`)
 
 Zatim slijedi `tools/PUBLISH.md`.

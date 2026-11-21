@@ -267,6 +267,27 @@ textarea.inp{min-height:70px}
 #view>*{animation:fadeIn .3s ease both}
 @media (max-height:740px){.pmap{min-height:270px}}
 
+/* tyre season toast */
+.tyre-note{position:fixed;inset:0;z-index:90;display:none;align-items:center;justify-content:center;padding:18px;padding-left:max(18px,var(--sal));padding-right:max(18px,var(--sar));background:rgba(4,12,24,.42);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);opacity:0;pointer-events:none}
+.tyre-note.on,.tyre-note.out{display:flex}
+.tyre-note.on{opacity:1;pointer-events:auto}
+.tyre-note.out{opacity:0;pointer-events:none}
+.tyre-note-card{width:min(360px,100%);border-radius:22px;padding:18px 16px 14px;background:linear-gradient(180deg,#142038,#0a141f);border:1px solid rgba(125,211,252,.28);box-shadow:0 16px 44px rgba(0,0,0,.48),0 0 22px rgba(56,189,248,.14),inset 0 1px 0 rgba(255,255,255,.1);-webkit-backdrop-filter:blur(22px) saturate(1.25);backdrop-filter:blur(22px) saturate(1.25);transform:scale(.92) translateY(12px);opacity:0;display:flex;flex-direction:column;gap:12px}
+.tyre-note.on .tyre-note-card{transform:scale(1) translateY(0);opacity:1}
+.tyre-note.out .tyre-note-card{transform:scale(.96) translateY(-8px);opacity:0}
+.tyre-note,.tyre-note-card{transition:opacity .5s cubic-bezier(.22,.7,.25,1),transform .5s cubic-bezier(.22,.7,.25,1)}
+.tyre-note-top{display:flex;align-items:center;gap:11px}
+.tyre-note-ico{width:42px;height:42px;border-radius:14px;flex:none;display:grid;place-items:center;color:#fff;background:linear-gradient(180deg,#60a5fa,#2563eb);box-shadow:0 4px 14px rgba(37,99,235,.4)}
+.tyre-note-ico svg{width:22px;height:22px}
+.tyre-note-title{font-size:17px;font-weight:750;color:#fff;letter-spacing:-.2px}
+.tyre-note-sub{font-size:13px;color:#bae6fd;font-weight:600;margin-top:1px}
+.tyre-note-text{font-size:14.5px;color:#e2e8f0;line-height:1.4}
+.tyre-note-actions{display:flex;gap:8px;margin-top:2px}
+.tyre-note-actions .btn{height:42px;font-size:13.5px;padding:0 10px;width:auto;flex:1}
+@media (max-width:390px){.tyre-note{padding:16px}.tyre-note-card{border-radius:20px}}
+@media (prefers-reduced-motion:reduce){.tyre-note,.tyre-note-card{transition:none}.tyre-note-card{transform:none}}
+
+
   </style>
 </head>
 <body>
@@ -274,10 +295,13 @@ textarea.inp{min-height:70px}
 <main id="view"></main>
 <nav class="nav-slot" id="nav" role="tablist"></nav>
 <div id="sheet" class="hidden"></div>
+<div id="tyreNote" class="tyre-note" aria-hidden="true"></div>
 <script>
-// ===== Servisni Intervali 1.4.0 =====
-window.APP_VERSION = '1.4.1';
+// ===== Servisni Intervali 1.4.2 =====
+window.APP_VERSION = '1.4.2';
 (function () {
+  if (window.__SI_NOW != null || window.__SI_NO_SPLASH) { const s = document.getElementById('splash'); if (s) s.remove(); }
+
   if (/[?&]r=\d+/.test(location.search)) history.replaceState(null, '', location.pathname + location.hash);
   if (!('serviceWorker' in navigator)) return;
   var hadController = !!navigator.serviceWorker.controller, reloading = false;
@@ -377,7 +401,9 @@ function esc(s) { return String(s === undefined || s === null ? '' : s).replace(
 function fmtNum(n) { return (Number(n) || 0).toLocaleString('hr-HR'); }
 function fmtDate(d) { if (!d) return '—'; const m = String(d).match(/^(\d{4})-(\d{2})-(\d{2})/); return m ? `${m[3]}.${m[2]}.${m[1]}.` : d; }
 function fmtMoney(x) { const n = Number(x) || 0; return n.toLocaleString('hr-HR', { minimumFractionDigits: n % 1 ? 2 : 0, maximumFractionDigits: 2 }) + ' €'; }
-function daysUntil(s) { if (!s) return 999; const d = new Date(s); const t = new Date(); t.setHours(0, 0, 0, 0); return Math.ceil((d - t) / 86400000); }
+function nowDate() { return window.__SI_NOW != null ? new Date(window.__SI_NOW) : new Date(); }
+function startOfDay(d) { const t = new Date(d); t.setHours(0, 0, 0, 0); return t; }
+function daysUntil(s) { if (!s) return 999; const d = new Date(s); const t = startOfDay(nowDate()); return Math.ceil((d - t) / 86400000); }
 function num(x) { if (x === null || x === undefined || x === '') return NaN; return parseFloat(String(x).replace(',', '.').replace(/[^0-9.\-]/g, '')); }
 function fmtDec(n, d) { return (Math.round(n * Math.pow(10, d)) / Math.pow(10, d)).toString().replace('.', ','); }
 // 2055516 -> 205/55 R16
@@ -666,18 +692,130 @@ function updateBanner() {
   if (!S.updateAvailable || S.updateDismissed) return '';
   return `<div class="glass update"><span style="color:#7dd3fc;width:20px;height:20px;flex:none">${ic('refresh')}</span><div class="ut">Dostupna je nova verzija ${esc(S.remoteVersion)}</div><button class="btn btn-ghost" data-a="dismissUpdate">Kasnije</button><button class="btn btn-primary" data-a="applyUpdate">${S.refreshing ? 'Ažuriram…' : 'Ažuriraj'}</button></div>`;
 }
-function isWinterSeason() { const m = new Date().getMonth() + 1; return m === 10 || m === 11; }
-function showTireReminder() { const m = new Date().getMonth() + 1; return [3, 4, 10, 11].includes(m); }
 function vehImg(v) { return hasImage(v) ? `<img src="${esc(photoOf(v))}" alt="" loading="lazy">` : `<div class="emoji">${typeIcon(v.type)}</div>`; }
+function isWinterSeason() { const n = nowDate(), m = n.getMonth() + 1; return m === 10 || m === 11; }
+
+const TYRE_LS = 'si_tyreRemind';
+function tyreRemindState() { const s = lsGet(TYRE_LS, {}) || {}; return { lastShown: Number(s.lastShown) || 0, done: Object.assign({}, s.done || {}) }; }
+function saveTyreRemindState(st) { lsSet(TYRE_LS, st); }
+function tyreDeadlineDate(year, season) { return season === 'winter' ? new Date(year, 10, 15) : new Date(year, 3, 15); }
+function tyreWindow(at) {
+  const t = startOfDay(at || nowDate());
+  const y = t.getFullYear(), m = t.getMonth() + 1, d = t.getDate();
+  const atOrAfter = (mo, da) => m > mo || (m === mo && d >= da);
+  let season, year;
+  if (atOrAfter(11, 8) || !atOrAfter(4, 8)) { season = 'winter'; year = atOrAfter(11, 8) ? y : y - 1; }
+  else { season = 'summer'; year = y; }
+  const deadline = tyreDeadlineDate(year, season);
+  const days = Math.round((startOfDay(deadline) - t) / 86400000);
+  if (days > 7 || days < -14) return null;
+  return { season, year, deadline, days };
+}
+function tyreIntervalMs(days) {
+  if (days <= 1) return 60 * 60 * 1000;
+  if (days <= 3) return 8 * 60 * 60 * 1000;
+  return 24 * 60 * 60 * 1000;
+}
+function tyreDaysLabel(n) {
+  if (n > 1) return 'za ' + n + ' dana';
+  if (n === 1) return 'sutra';
+  if (n === 0) return 'danas';
+  const a = -n; return a === 1 ? 'kasni 1 dan' : 'kasni ' + a + ' dana';
+}
+function tyreCopy(info) {
+  const zim = info.season === 'winter';
+  const rok = fmtDate(info.deadline.getFullYear() + '-' + String(info.deadline.getMonth() + 1).padStart(2, '0') + '-' + String(info.deadline.getDate()).padStart(2, '0'));
+  const title = zim ? 'Zimske gume' : 'Ljetne gume';
+  const sub = zim ? 'Podsjetnik za zamjenu' : 'Podsjetnik za zamjenu';
+  const when = info.days < 0 ? ('Rok je bio ' + rok) : ('Rok je ' + rok);
+  const text = (zim ? 'Vrijeme je za zimske gume. ' : 'Vrijeme je za ljetne gume. ') + when + ' — ' + tyreDaysLabel(info.days) + '.';
+  return { title, sub, text, zim };
+}
+function shouldShowTyrePopup() {
+  if (!S.prefs.notifTyres) return false;
+  const info = tyreWindow(); if (!info) return false;
+  const st = tyreRemindState();
+  if (st.done[info.season] === info.year) return false;
+  const wait = tyreIntervalMs(info.days);
+  return (nowDate().getTime() - st.lastShown) >= wait;
+}
+let tyreNoteTimer, tyreNoteOpen = false, tyreNoteInfo = null;
+function reducedMotion() { return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; }
+function markTyreShown() {
+  const st = tyreRemindState(); st.lastShown = nowDate().getTime(); saveTyreRemindState(st);
+}
+async function fireTyreSystemNotification(info, text) {
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  const title = info.season === 'winter' ? 'Podsjetnik: zimske gume' : 'Podsjetnik: ljetne gume';
+  const opts = { body: text, icon: './icon-192.png', badge: './icon-192.png', tag: 'si-tyre-' + info.season + '-' + info.year, renotify: false };
+  try {
+    const reg = window.__swReg || (navigator.serviceWorker && await navigator.serviceWorker.getRegistration());
+    if (reg && reg.showNotification) await reg.showNotification(title, opts);
+    else new Notification(title, opts);
+  } catch (e) {}
+}
+function requestTyreNotifPerm() {
+  if (!('Notification' in window) || Notification.permission !== 'default') return;
+  try { Notification.requestPermission(); } catch (e) {}
+}
+function hideTyrePopup(mode) {
+  const el = document.getElementById('tyreNote'); if (!el || !tyreNoteOpen) { tyreNoteOpen = false; return; }
+  clearTimeout(tyreNoteTimer);
+  tyreNoteOpen = false;
+  if (mode !== 'done') markTyreShown();
+  const finish = () => { el.classList.remove('on', 'out'); el.innerHTML = ''; el.setAttribute('aria-hidden', 'true'); tyreNoteInfo = null; };
+  if (reducedMotion()) finish();
+  else {
+    el.classList.remove('on'); el.classList.add('out');
+    setTimeout(finish, 520);
+  }
+}
+function showTyrePopup() {
+  const info = tyreWindow(); if (!info) return;
+  const el = document.getElementById('tyreNote'); if (!el) return;
+  const c = tyreCopy(info);
+  clearTimeout(tyreNoteTimer);
+  tyreNoteOpen = true; tyreNoteInfo = info;
+  markTyreShown();
+  el.innerHTML = `<div class="tyre-note-card" role="dialog" aria-labelledby="tyreNoteTitle" aria-describedby="tyreNoteText">
+    <div class="tyre-note-top"><div class="tyre-note-ico">${ic(c.zim ? 'snow' : 'sun', 1.4)}</div><div><div class="tyre-note-title" id="tyreNoteTitle">${c.title}</div><div class="tyre-note-sub">${c.sub}</div></div></div>
+    <div class="tyre-note-text" id="tyreNoteText">${esc(c.text)}</div>
+    <div class="tyre-note-actions"><button class="btn btn-ghost" data-a="tyreSnooze">Podsjeti me kasnije</button><button class="btn btn-primary" data-a="tyreDone">Gume zamijenjene</button></div>
+  </div>`;
+  el.setAttribute('aria-hidden', 'false');
+  el.classList.remove('out', 'on');
+  const open = () => el.classList.add('on');
+  if (reducedMotion()) open(); else requestAnimationFrame(() => requestAnimationFrame(open));
+  const fade = Number(window.__SI_TYRE_FADE_MS); const ms = Number.isFinite(fade) && fade >= 0 ? fade : 7000;
+  const arm = () => { if (!tyreNoteOpen) return; clearTimeout(tyreNoteTimer); tyreNoteTimer = setTimeout(() => hideTyrePopup('snooze'), ms); };
+  arm();
+  const card = el.querySelector('.tyre-note-card');
+  if (card) {
+    card.addEventListener('pointerdown', () => clearTimeout(tyreNoteTimer));
+    card.addEventListener('pointerup', arm);
+  }
+  fireTyreSystemNotification(info, c.text);
+}
+function checkTyreReminder() {
+  if (tyreNoteOpen) return;
+  if (S.sheet) return;
+  if (!shouldShowTyrePopup()) return;
+  showTyrePopup();
+}
+function tyreMarkDone() {
+  const info = tyreNoteInfo || tyreWindow();
+  if (info) { const st = tyreRemindState(); st.done[info.season] = info.year; st.lastShown = nowDate().getTime(); saveTyreRemindState(st); }
+  hideTyrePopup('done');
+  toast('Hvala, više te neću podsjećati ove sezone.');
+}
+window.__SI_checkTyres = checkTyreReminder;
+window.__SI_tyreWindow = tyreWindow;
+document.getElementById('tyreNote').addEventListener('click', (ev) => { if (ev.target && ev.target.id === 'tyreNote') hideTyrePopup('snooze'); });
 
 function vHome() {
   const T = { hr: 'Moja vozila', en: 'My Vehicles', de: 'Meine Fahrzeuge', it: 'I miei veicoli' };
   let h = `<div class="hd"><h1>${T[S.lang] || T.hr}</h1><div class="gbtns"><button class="gbtn" data-a="downloadBackup" aria-label="Preuzmi backup">${ic('dl')}</button><button class="gbtn" data-a="sheet" data-v="lang" aria-label="Jezik">${ic('globe')}</button><button class="gbtn primary" data-a="newVehicle" aria-label="Novo vozilo">${ic('plus', 2.2)}</button></div></div>`;
   h += updateBanner();
-  if (S.prefs.notifTyres && showTireReminder()) {
-    const w = isWinterSeason();
-    h += `<div class="remind"><div class="bg" style="background-image:url('img/${w ? 'winter' : 'summer'}-road.jpg')"></div><div class="shade"></div><div class="flake">${ic(w ? 'snow' : 'sun', 1.6)}</div><div class="body"><div class="rh"><div class="ric">${ic(w ? 'snow' : 'sun', 2)}</div><div class="rt">Podsjetnik za gume</div></div><div class="rd">${w ? 'Vrijeme je za zimske gume (od 15.11.)' : 'Vrijeme je za ljetne gume (od 15.04.)'}</div></div></div>`;
-  }
   if (S.prefs.notifReg) S.vehicles.forEach(v => {
     [['registrationDate', 'Registracija ističe'], ['insuranceDate', 'Osiguranje ističe']].forEach(([k, t]) => {
       const n = daysUntil(v[k]);
@@ -925,7 +1063,7 @@ function vSettings() {
   h += row('downloadBackup', 'dl', 'Preuzmi backup', '<span>JSON datoteka na uređaj</span>', chev);
   h += `<div class="set-row"><div class="set-ico">${ic('ul')}</div><div class="set-body"><b>Vrati backup</b><span>Učitaj spremljenu datoteku</span></div>${chev}<input type="file" accept="application/json,.json" data-a="restore" aria-label="Vrati backup"></div>`;
   h += `</div><div class="glass set-card">`;
-  h += row('pref', 'bell', 'Obavijesti – gume', '<span>Podsjetnik sezone u aplikaciji</span>', `<span class="tog ${S.prefs.notifTyres ? 'on' : ''}"></span>`, 'data-v="notifTyres"');
+  h += row('pref', 'bell', 'Obavijesti – gume', '<span>7 dana prije roka, u sredini ekrana</span>', `<span class="tog ${S.prefs.notifTyres ? 'on' : ''}"></span>`, 'data-v="notifTyres"');
   h += row('pref', 'cal', 'Obavijesti – registracija', '<span>30 dana prije isteka</span>', `<span class="tog ${S.prefs.notifReg ? 'on' : ''}"></span>`, 'data-v="notifReg"');
   h += `</div><div class="glass set-card">`;
   h += row('', 'pen', 'Verzija', `<span>${esc(S.appVersion)}${S.remoteVersion && S.remoteVersion !== S.appVersion ? ' · na serveru ' + esc(S.remoteVersion) : ''}</span>`, '');
@@ -1138,7 +1276,9 @@ document.addEventListener('click', async (ev) => {
     case 'sheet': S.sheet = v; S.sheetData = {}; render(); break;
     case 'closeSheet': S.sheet = null; render(); break;
     case 'setLang': S.lang = v; localStorage.setItem('lang', v); S.sheet = null; render(); break;
-    case 'pref': S.prefs[v] = !S.prefs[v]; lsSet('si_prefs', S.prefs); persist(); render(); break;
+    case 'pref': S.prefs[v] = !S.prefs[v]; lsSet('si_prefs', S.prefs); persist(); render(); if (v === 'notifTyres' && S.prefs.notifTyres) requestTyreNotifPerm(); break;
+    case 'tyreSnooze': hideTyrePopup('snooze'); break;
+    case 'tyreDone': tyreMarkDone(); break;
     case 'checkUpdate': checkForUpdate(); break;
     case 'applyUpdate': applyUpdate(); break;
     case 'dismissUpdate': S.updateDismissed = true; render(); break;
@@ -1177,13 +1317,15 @@ document.addEventListener('change', (ev) => {
   if (a === 'restore' && el.files[0]) { restoreBackup(el.files[0]); el.value = ''; }
 });
 window.addEventListener('resize', () => { if (S.view === 'tlak') layoutTlak(); });
-document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { fetchRemoteVersion(); if (S.auth) Cloud.startup(); } });
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { fetchRemoteVersion(); if (S.auth) Cloud.startup(); checkTyreReminder(); } });
 window.addEventListener('online', () => { if (S.auth && S.sync.dirty) Cloud.push(); });
 
 // ---------- Start ----------
 (function start() {
   const redirect = Cloud.handleRedirect();
   render(); readSwVersion(); fetchRemoteVersion();
+  const tyreDelay = Number(window.__SI_TYRE_DELAY_MS);
+  setTimeout(checkTyreReminder, Number.isFinite(tyreDelay) ? tyreDelay : 3400);
   if (redirect === 'recovery') { S.sheet = 'newpass'; S.sheetData = {}; render(); }
   else if (redirect && S.auth) Cloud.afterLogin().then(() => toast('Email potvrđen – backup je uključen')).catch(() => {});
   else if (S.auth) Cloud.startup();

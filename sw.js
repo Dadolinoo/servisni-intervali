@@ -1,7 +1,7 @@
 // Servisni Intervali – service worker
-// Za novu verziju: povećaj VERSION i CACHE (npr. '1.4.0' / 'si-v4') te isto u index.html (APP_VERSION) i version.json.
-const VERSION = '1.4.1';
-const CACHE = 'si-v6';
+// Za novu verziju: povećaj VERSION i CACHE (npr. '1.4.2' / 'si-v7') te isto u index.html (APP_VERSION) i version.json.
+const VERSION = '1.4.2';
+const CACHE = 'si-v7';
 const RUNTIME = CACHE + '-runtime';
 
 const PRECACHE = [
@@ -73,6 +73,15 @@ self.addEventListener('activate', (event) => {
   })());
 });
 
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  event.waitUntil((async () => {
+    const wins = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    for (const c of wins) { if ('focus' in c) return c.focus(); }
+    if (self.clients.openWindow) return self.clients.openWindow('./');
+  })());
+});
 self.addEventListener('message', (event) => {
   const data = event.data || {};
   if (data === 'skipWaiting' || data.type === 'SKIP_WAITING') self.skipWaiting();
