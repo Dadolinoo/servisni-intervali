@@ -1,7 +1,7 @@
 // Servisni Intervali – service worker
-// Za novu verziju: povećaj VERSION i CACHE (npr. '1.5.1' / 'si-v16') te isto u index.html (APP_VERSION) i version.json.
-const VERSION = '1.5.1';
-const CACHE = 'si-v16';
+// Za novu verziju: povećaj VERSION i CACHE (npr. '1.5.2' / 'si-v17') te isto u index.html (APP_VERSION) i version.json.
+const VERSION = '1.5.2';
+const CACHE = 'si-v17';
 const RUNTIME = CACHE + '-runtime';
 
 const PRECACHE = [
