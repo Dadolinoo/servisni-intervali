@@ -320,8 +320,8 @@ textarea.inp{min-height:70px}
 <div id="sheet" class="hidden"></div>
 <div id="tyreNote" class="tyre-note" aria-hidden="true"></div>
 <script>
-// ===== Servisni Intervali 1.5.0 =====
-window.APP_VERSION = '1.5.0';
+// ===== Servisni Intervali 1.5.1 =====
+window.APP_VERSION = '1.5.1';
 (function () {
   if (window.__SI_NOW != null || window.__SI_NO_SPLASH) { const s = document.getElementById('splash'); if (s) s.remove(); }
 
@@ -454,16 +454,24 @@ function emptyTire() { return { size: '', dot: '', front: '', rear: '', torque: 
 
 // ---------- Dijelovi za servis ----------
 const FILTERS = ['Bosch', 'Mann', 'Mahle', 'UFI', 'Hengst', 'Filtron', 'Knecht', 'Purflux', 'OEM'];
+const MOTO_BRAKE_BRANDS = ['Brembo', 'EBC', 'Galfer', 'Ferodo', 'SBS', 'TRW Lucas', 'Braking', 'Nissin'];
+const SHOCK_OIL_BRANDS = ['Motul', 'Fox', 'Ohlins', 'WP', 'KYB', 'Liqui Moly', 'Silkolene', 'Ipone', 'Putoline'];
+const SHOCK_GRADES = ['2.5W', '5W', '7.5W', '10W', '15W', '20W'];
+const MOTO_KINDS = ['Cestovni', 'Sport', 'Touring', 'Enduro', 'Cross', 'Hard enduro', 'Skuter', 'Ostalo'];
 const PARTS = [
   { key: 'filter_ulja', name: 'Filter ulja', ico: '🛢️', brands: FILTERS, spec: 'Oznaka (npr. HU 718/1 k)' },
   { key: 'filter_zraka', name: 'Filter zraka', ico: '🌬️', brands: FILTERS, spec: 'Oznaka (npr. S 0142)' },
-  { key: 'filter_kabine', name: 'Filter kabine', ico: '🍃', brands: FILTERS, spec: 'Oznaka' },
+  { key: 'filter_kabine', name: 'Filter kabine', ico: '🍃', brands: FILTERS, spec: 'Oznaka', cabin: true },
   { key: 'filter_goriva', name: 'Filter goriva', ico: '⛽', brands: FILTERS, spec: 'Oznaka' },
   { key: 'ulje', name: 'Ulje', ico: '💧', brands: ['Castrol', 'Mobil 1', 'Shell', 'Motul', 'Liqui Moly', 'Total', 'Elf', 'Valvoline', 'Fuchs', 'Ravenol', 'INA', 'OEM'], spec: 'Naziv (npr. Edge)', oil: true },
   { key: 'antifriz', name: 'Antifriz', ico: '❄️', brands: ['Castrol', 'Liqui Moly', 'Motul', 'Total', 'Shell', 'INA', 'OEM'], spec: 'Tip (npr. G13)' },
   { key: 'kocion', name: 'Kočiono ulje', ico: '🧪', brands: ['ATE', 'Bosch', 'TRW', 'Castrol', 'Motul', 'OEM'], spec: 'Tip (npr. DOT 4)' },
-  { key: 'diskovi', name: 'Diskovi', ico: '⚙️', brands: ['Brembo', 'ATE', 'Zimmermann', 'TRW', 'Textar', 'Bosch', 'Ferodo', 'OEM'], spec: 'Pozicija (prednji / stražnji)' },
-  { key: 'plocice', name: 'Pločice', ico: '🛑', brands: ['Brembo', 'ATE', 'Textar', 'TRW', 'Ferodo', 'Bosch', 'Pagid', 'OEM'], spec: 'Pozicija (prednje / stražnje)' },
+  { key: 'diskovi', name: 'Diskovi', ico: '⚙️', brands: ['Brembo', 'ATE', 'Zimmermann', 'TRW', 'Textar', 'Bosch', 'Ferodo', 'OEM'], spec: 'Pozicija (prednji / stražnji)', carBrake: true },
+  { key: 'plocice', name: 'Pločice', ico: '🛑', brands: ['Brembo', 'ATE', 'Textar', 'TRW', 'Ferodo', 'Bosch', 'Pagid', 'OEM'], spec: 'Pozicija (prednje / stražnje)', carBrake: true },
+  { key: 'plocice_prednje', name: 'Pločice prednje', ico: '🛑', brands: MOTO_BRAKE_BRANDS, spec: 'Oznaka', motoBrake: true },
+  { key: 'plocice_zadnje', name: 'Pločice zadnje', ico: '🛑', brands: MOTO_BRAKE_BRANDS, spec: 'Oznaka', motoBrake: true },
+  { key: 'diskovi_prednji', name: 'Diskovi prednji', ico: '⚙️', brands: MOTO_BRAKE_BRANDS, spec: 'Oznaka', motoBrake: true },
+  { key: 'diskovi_zadnji', name: 'Diskovi zadnji', ico: '⚙️', brands: MOTO_BRAKE_BRANDS, spec: 'Oznaka', motoBrake: true },
   { key: 'remen', name: 'Zupčasti remen', ico: '➰', brands: ['Gates', 'Continental', 'Dayco', 'INA', 'SKF', 'Bosch', 'OEM'], spec: 'Oznaka (komplet)' },
   { key: 'vodena', name: 'Vodena pumpa', ico: '💦', brands: ['SKF', 'INA', 'Hepu', 'Gates', 'Graf', 'OEM'], spec: 'Oznaka' },
   { key: 'svjecice', name: 'Svjećice', ico: '⚡', brands: ['Bosch', 'NGK', 'Denso', 'Champion', 'Beru', 'OEM'], spec: 'Oznaka' },
@@ -473,10 +481,43 @@ const PARTS = [
   { key: 'filter_hidraulike', name: 'Filter hidraulike', ico: '🧰', brands: FILTERS, spec: 'Oznaka', machine: true },
   { key: 'ulje_hidraulike', name: 'Ulje hidraulike', ico: '💧', brands: ['Castrol', 'Mobil', 'Shell', 'Motul', 'Liqui Moly', 'Total', 'Fuchs', 'INA', 'OEM'], spec: 'Naziv', hydOil: true, machine: true },
   { key: 'gusjenice_kotaci', name: 'Izmjena gusjenica / kotača', ico: '⛓️', machine: true, trackWheel: true },
+  { key: 'ulje_prednji_diff', name: 'Ulje prednjeg diferencijala', ico: '⚙️', spec: 'Naziv', diffOil: true },
+  { key: 'ulje_zadnji_diff', name: 'Ulje zadnjeg diferencijala', ico: '⚙️', spec: 'Naziv', diffOil: true },
+  { key: 'ulje_amortizera', name: 'Ulje amortizera', ico: '💧', brands: SHOCK_OIL_BRANDS, shockOil: true },
   { key: 'ventili', name: 'Podešavanje ventila glave motora', ico: '🔩', valves: true }
 ];
 const HYDRAULIC_GRADES = ['HV 32', 'HV 46', 'HV 68', 'HLP 32', 'HLP 46', 'HLP 68', '10W', '10W-30 UTTO'];
 const GRADES = ['0W-16', '0W-20', '0W-30', '0W-40', '5W-20', '5W-30', '5W-40', '10W-40', '15W-40', '20W-50'];
+const MOTO_OIL_BRANDS = ['Motul', 'Castrol Power1', 'Liqui Moly', 'Shell Advance', 'Mobil 1 Racing 4T', 'Repsol', 'Eni/Agip i-Ride', 'Total Hi-Perf', 'Ipone', 'Putoline', 'Bel-Ray', 'Amsoil', 'Silkolene', 'Fuchs', 'Elf Moto', 'Yamalube', 'Honda Pro', 'Polaris', 'Can-Am XPS', 'Kawasaki'];
+const MOTO_FILTER_BRANDS = ['HiFlo', 'K&N', 'Mahle', 'Champion', 'Bosch', 'Meiwa', 'Polaris', 'Can-Am', 'OEM'];
+const MOTO_GRADES = ['10W-30', '10W-40', '10W-50', '15W-50', '20W-50', '5W-40'];
+const DIFF_GRADES = ['75W-90', '80W-90', '85W-140', 'SAE 90', 'UTTO'];
+function isMotoType(t) { return t === 'ATV' || t === 'Motocikl'; }
+function hasDiffOil(t) { return t === 'ATV' || t === 'Traktor'; }
+function brandIsFreeText(def, t) {
+  if (!def) return false;
+  if (t === 'Bager' && (def.oil || def.hydOil)) return true;
+  if (t === 'Traktor' && (def.oil || def.hydOil || def.diffOil)) return true;
+  return false;
+}
+function partBrands(def, t) {
+  if (!def || brandIsFreeText(def, t)) return [];
+  if (isMotoType(t) && def.key === 'filter_ulja') return MOTO_FILTER_BRANDS;
+  if (isMotoType(t) && (def.oil || def.diffOil)) return MOTO_OIL_BRANDS;
+  if (def.shockOil) return SHOCK_OIL_BRANDS;
+  return def.brands || [];
+}
+function partGrades(def, t) {
+  if (!def) return GRADES;
+  if (def.hydOil) return HYDRAULIC_GRADES;
+  if (def.diffOil) return DIFF_GRADES;
+  if (def.shockOil) return SHOCK_GRADES;
+  if (def.oil && isMotoType(t)) return MOTO_GRADES;
+  return GRADES;
+}
+function partGradeOther(def, t) {
+  return !!(def && (def.hydOil || def.diffOil || def.shockOil || (def.oil && isMotoType(t))));
+}
 const SERVICE_TYPES = [['regular', 'Redovni servis'], ['small', 'Mali servis'], ['big', 'Veliki servis'], ['tyres', 'Zamjena guma'], ['repair', 'Popravak'], ['other', 'Ostalo']];
 function serviceTitle(s) { return s.title || (SERVICE_TYPES.find(t => t[0] === s.type) || [0, 'Servis'])[1]; }
 function fmtValve(x) { if (x === '' || x === undefined || x === null) return '—'; return String(x).replace('.', ','); }
@@ -486,7 +527,16 @@ function partLabel(p) {
     const g = p.grade === 'Drugo' ? (p.gradeOther || 'Drugo') : p.grade;
     return 'Ulje hidraulike' + (g ? ' ' + g : '');
   }
+  if ((p.key === 'ulje_prednji_diff' || p.key === 'ulje_zadnji_diff') && p.grade) {
+    const g = p.grade === 'Drugo' ? (p.gradeOther || 'Drugo') : p.grade;
+    return p.name + (g ? ' ' + g : '');
+  }
   if (p.key === 'gusjenice_kotaci' && p.kind) return p.kind === 'Kotači' ? 'Izmjena kotača' : 'Izmjena gusjenica';
+  if (p.key === 'ulje_amortizera') {
+    const pos = p.kind || '';
+    const g = p.grade === 'Drugo' ? (p.gradeOther || '') : (p.grade || '');
+    return 'Ulje amortizera' + (pos ? ' – ' + pos : '') + (g ? ' ' + g : '');
+  }
   if (p.key === 'ventili' && (p.intake || p.exhaust)) return 'Ventili U ' + fmtValve(p.intake) + ' / I ' + fmtValve(p.exhaust);
   return p.name;
 }
@@ -494,7 +544,8 @@ function partSummary(p) {
   const brand = p.brand === 'Drugo' ? p.brandOther : p.brand;
   const grade = p.grade === 'Drugo' ? p.gradeOther : p.grade;
   const valve = (p.intake || p.exhaust) ? ('U ' + fmtValve(p.intake) + ' / I ' + fmtValve(p.exhaust)) : '';
-  return [brand, grade, p.kind, p.liters ? String(p.liters).replace('.', ',') + ' L' : '', p.qty ? String(p.qty) + ' kom' : '', valve, p.spec].filter(Boolean).join(' · ');
+  const unit = p.key === 'ulje_amortizera' ? ' ml' : ' L';
+  return [brand, grade, p.kind, p.liters ? String(p.liters).replace('.', ',') + unit : '', p.qty ? String(p.qty) + ' kom' : '', valve, p.spec].filter(Boolean).join(' · ');
 }
 function emptyServiceForm(v) {
   return {
@@ -517,10 +568,14 @@ function serviceToForm(s, v) {
       fp.on = true; fp.spec = p.spec || ''; fp.liters = p.liters || ''; fp.qty = p.qty || '';
       fp.kind = p.kind || ''; fp.intake = p.intake || ''; fp.exhaust = p.exhaust || '';
       fp.price = (p.price === 0 || p.price) ? p.price : '';
-      const brands = known[p.key].brands || [];
-      if (p.brand && brands.indexOf(p.brand) >= 0) fp.brand = p.brand;
-      else if (p.brand) { fp.brand = 'Drugo'; fp.brandOther = p.brand; }
-      const grades = known[p.key].hydOil ? HYDRAULIC_GRADES : GRADES;
+      const t = (v && v.type) || '';
+      if (brandIsFreeText(known[p.key], t)) fp.brand = p.brand || '';
+      else {
+        const brands = partBrands(known[p.key], t);
+        if (p.brand && brands.indexOf(p.brand) >= 0) fp.brand = p.brand;
+        else if (p.brand) { fp.brand = 'Drugo'; fp.brandOther = p.brand; }
+      }
+      const grades = partGrades(known[p.key], t);
       if (p.grade && grades.indexOf(p.grade) >= 0) fp.grade = p.grade;
       else if (p.grade) { fp.grade = 'Drugo'; fp.gradeOther = p.grade; }
       else fp.grade = '';
@@ -563,7 +618,7 @@ function normalizeVehicle(v) {
   v = v || {};
   if (!v.type) v.type = 'Automobil';
   if (v.tireTorque !== undefined) { if (!v.tireTorqueAlu && v.tireTorque) v.tireTorqueAlu = v.tireTorque; delete v.tireTorque; }
-  ['tireTorqueAlu', 'tireTorqueSteel', 'workHours', 'plate', 'bodyType', 'serviceInterval', 'insuranceDate', 'registrationDate', 'notes', 'engineNo'].forEach(k => { if (v[k] === undefined) v[k] = ''; });
+  ['tireTorqueAlu', 'tireTorqueSteel', 'workHours', 'plate', 'bodyType', 'serviceInterval', 'insuranceDate', 'registrationDate', 'notes', 'engineNo', 'motoKind'].forEach(k => { if (v[k] === undefined) v[k] = ''; });
   if (!Array.isArray(v.services)) v.services = [];
   if (!Array.isArray(v.documents)) v.documents = [];
   if (!v.id) v.id = Date.now() + Math.floor(Math.random() * 1000);
@@ -1077,6 +1132,7 @@ function vVehicle() {
   if (!isCar(v.type) && hasHours(v)) h += row('clock', 'Radni sati', fmtNum(v.workHours) + ' h', 'blue');
   h += row('lines', 'Šasija', esc(v.vin || '—'), 'mono');
   if (hasEngineNo(v.type)) h += row('wrench', 'Broj / oznaka motora', esc(v.engineNo || '—'));
+  if (v.type === 'Motocikl' && v.motoKind) h += row('car', 'Vrsta motocikla', esc(v.motoKind));
   if (v.plate) h += row('doc', 'Registracijska oznaka', `<span class="plate" style="margin-top:2px">${esc(v.plate)}</span>`);
   h += row('cal', 'Godište', esc(v.year || '—')) + `</div>`;
   h += `<div><div class="sec-h">Gume</div><div class="tyre-grid" style="margin-top:6px">${tyreCard(v, 'summer')}${tyreCard(v, 'winter')}</div></div>`;
@@ -1155,6 +1211,7 @@ function vAddVehicle() {
     <div class="grid2">${field('Godište', inp('form.year', f.year, 'inputmode="numeric" placeholder="npr. 2020"'))}${field('Registracijska oznaka', inp('form.plate', f.plate, 'placeholder="npr. ZG 1234-AB" autocapitalize="characters" style="text-transform:uppercase"'))}</div>
     ${field(isCar(f.type) ? 'Broj šasije (VIN) *' : 'Broj šasije / serijski broj', `<input class="inp mono" data-f="form.vin" value="${esc(f.vin)}" autocapitalize="characters" placeholder="17 znakova">`)}
     ${hasEngineNo(f.type) ? field('Broj / oznaka motora', inp('form.engineNo', f.engineNo, 'placeholder="npr. 4TNV98 ili broj motora"')) : ''}
+    ${f.type === 'Motocikl' ? `<div><span class="flabel">Vrsta motocikla</span><div class="chips">${MOTO_KINDS.map(k => `<button type="button" class="chipx ${f.motoKind === k ? 'on' : ''}" data-a="motoKind" data-v="${k}">${k}</button>`).join('')}</div></div>` : ''}
     <div class="grid2">${field('Kilometraža (km)', inp('form.mileage', f.mileage, 'inputmode="numeric" placeholder="npr. 121000"'))}${isCar(f.type) ? field('Servisni interval (km)', inp('form.serviceInterval', f.serviceInterval, 'inputmode="numeric" placeholder="npr. 15000"')) : field('Radni sati (h)', inp('form.workHours', f.workHours, 'inputmode="decimal"'))}</div>
   </div>`;
   h += `<div class="glass form-card"><h3>${ic('cal')} Datumi</h3><div class="grid2">${field('Registracija vrijedi do', inp('form.registrationDate', f.registrationDate, 'type="date"'))}${field('Osiguranje vrijedi do', inp('form.insuranceDate', f.insuranceDate, 'type="date"'))}</div></div>`;
@@ -1188,18 +1245,29 @@ function partRow(p, i, custom) {
     h += `<div class="grid2">${field('Usisni (mm)', inp(base + 'intake', p.intake, 'inputmode="decimal" placeholder="npr. 0,20"'))}${field('Ispušni (mm)', inp(base + 'exhaust', p.exhaust, 'inputmode="decimal" placeholder="npr. 0,40"'))}</div>`;
     h += field('Napomena', inp(base + 'spec', p.spec, 'placeholder="opcionalno"'));
   } else {
-    const brandSel = `<select class="inp" data-f="${base}brand" data-rr="1"><option value="">Odaberi marku</option>${(def.brands || []).map(b => `<option ${p.brand === b ? 'selected' : ''}>${b}</option>`).join('')}<option value="Drugo" ${p.brand === 'Drugo' ? 'selected' : ''}>Drugo…</option></select>`;
-    if (def.oil || def.hydOil) {
-      const grades = def.hydOil ? HYDRAULIC_GRADES : GRADES;
-      const gradeSel = `<select class="inp" data-f="${base}grade" data-rr="1"><option value="">Odaberi</option>${grades.map(g => `<option ${p.grade === g ? 'selected' : ''}>${g}</option>`).join('')}${def.hydOil ? `<option value="Drugo" ${p.grade === 'Drugo' ? 'selected' : ''}>Drugo…</option>` : ''}</select>`;
-      h += `<div class="grid2">${field('Marka', brandSel)}${field('Gradacija', gradeSel)}</div>`;
-    } else h += field('Marka', brandSel);
-    if (p.brand === 'Drugo') h += field('Upiši marku', inp(base + 'brandOther', p.brandOther, 'placeholder="Marka"'));
+    const t = (sel() && sel().type) || '';
+    if (def.shockOil) {
+      h += `<div><span class="flabel">Što se mijenja</span><div class="chips">${['Prednja vilica', 'Zadnji amortizer'].map(k => `<button type="button" class="chipx ${p.kind === k ? 'on' : ''}" data-a="partKind" data-i="${i}" data-v="${k}">${k}</button>`).join('')}</div></div>`;
+    }
+    const freeBrand = brandIsFreeText(def, t);
+    const brands = partBrands(def, t);
+    const brandField = freeBrand
+      ? inp(base + 'brand', p.brand, 'placeholder="npr. Motul ili INA"')
+      : `<select class="inp" data-f="${base}brand" data-rr="1"><option value="">Odaberi marku</option>${brands.map(b => `<option ${p.brand === b ? 'selected' : ''}>${b}</option>`).join('')}<option value="Drugo" ${p.brand === 'Drugo' ? 'selected' : ''}>Drugo…</option></select>`;
+    const needsGrade = def.oil || def.hydOil || def.diffOil || def.shockOil;
+    if (needsGrade) {
+      const grades = partGrades(def, t);
+      const gradeSel = `<select class="inp" data-f="${base}grade" data-rr="1"><option value="">Odaberi</option>${grades.map(g => `<option ${p.grade === g ? 'selected' : ''}>${g}</option>`).join('')}${partGradeOther(def, t) ? `<option value="Drugo" ${p.grade === 'Drugo' ? 'selected' : ''}>Drugo…</option>` : ''}</select>`;
+      h += `<div class="grid2">${field('Marka', brandField)}${field('Gradacija', gradeSel)}</div>`;
+    } else h += field('Marka', brandField);
+    if (!freeBrand && p.brand === 'Drugo') h += field('Upiši marku', inp(base + 'brandOther', p.brandOther, 'placeholder="Marka"'));
     if (p.grade === 'Drugo') h += field('Upiši gradaciju', inp(base + 'gradeOther', p.gradeOther, 'placeholder="Gradacija"'));
-    if (def.oil || def.hydOil) {
-      const std = def.hydOil ? ['5', '10', '20'] : ['1', '4', '5'];
-      h += field(def.hydOil ? 'Naziv ulja' : 'Naziv ulja', inp(base + 'spec', p.spec, 'placeholder="' + esc(def.spec) + '"'));
-      h += `<div><span class="flabel">Litraža</span><div class="chips">${std.map(l => `<button class="chipx ${String(p.liters) === l ? 'on' : ''}" data-a="liters" data-i="${i}" data-v="${l}">${l} L</button>`).join('')}<input class="inp" style="width:104px;min-height:34px;padding:5px 9px;font-size:14px" data-f="${base}liters" value="${std.includes(String(p.liters)) ? '' : esc(p.liters)}" inputmode="decimal" placeholder="Drugo (L)"></div></div>`;
+    if (needsGrade) {
+      const std = def.shockOil ? ['100', '200', '400', '500'] : (def.diffOil ? ['0,5', '1', '2', '5'] : (def.hydOil ? ['5', '10', '20'] : ['1', '4', '5']));
+      const unit = def.shockOil ? 'ml' : 'L';
+      const qtyLabel = def.shockOil ? 'Količina (ml)' : (def.diffOil ? 'Količina (L)' : 'Litraža');
+      if (!def.shockOil) h += field('Naziv ulja', inp(base + 'spec', p.spec, 'placeholder="' + esc(def.spec) + '"'));
+      h += `<div><span class="flabel">${qtyLabel}</span><div class="chips">${std.map(l => `<button class="chipx ${String(p.liters) === l ? 'on' : ''}" data-a="liters" data-i="${i}" data-v="${l}">${l} ${unit}</button>`).join('')}<input class="inp" style="width:104px;min-height:34px;padding:5px 9px;font-size:14px" data-f="${base}liters" value="${std.includes(String(p.liters)) ? '' : esc(p.liters)}" inputmode="decimal" placeholder="Drugo (${unit})"></div></div>`;
     } else h += field(def.spec.split(' (')[0], inp(base + 'spec', p.spec, 'placeholder="' + esc(def.spec.includes('(') ? def.spec.split('(')[1].replace(')', '') : '') + '"'));
     if (def.qty) {
       const qstd = ['1', '2', '3', '4', '6', '8'];
@@ -1224,7 +1292,18 @@ function vAddService() {
   h += `<div class="grid2">${field('Vrsta servisa', `<select class="inp" data-f="sform.type">${SERVICE_TYPES.map(t => `<option value="${t[0]}" ${f.type === t[0] ? 'selected' : ''}>${t[1]}</option>`).join('')}</select>`)}${v && !isCar(v.type) ? field('Radni sati (h)', inp('sform.workHours', f.workHours, 'inputmode="decimal"')) : '<div></div>'}</div>`;
   h += `<div class="sec-h">Dijelovi i radovi</div>`;
   const machine = !!(v && isMachine(v.type));
-  f.parts.forEach((p, i) => { const def = PARTS.find(x => x.key === p.key); if (def && def.machine && !machine && !p.on) return; h += partRow(p, i, false); });
+  const moto = !!(v && isMotoType(v.type));
+  const diffs = !!(v && hasDiffOil(v.type));
+  f.parts.forEach((p, i) => {
+    const def = PARTS.find(x => x.key === p.key);
+    if (def && def.machine && !machine && !p.on) return;
+    if (def && def.cabin && moto && !p.on) return;
+    if (def && def.diffOil && !diffs && !p.on) return;
+    if (def && def.motoBrake && !moto && !p.on) return;
+    if (def && def.carBrake && moto && !p.on) return;
+    if (def && def.shockOil && !(v && v.type === 'Motocikl') && !p.on) return;
+    h += partRow(p, i, false);
+  });
   f.custom.forEach((p, i) => { h += partRow(p, i, true); });
   h += `<button class="add-row" data-a="addCustom">+ Dodaj stavku</button>`;
   h += field('Napomena', `<textarea class="inp" data-f="sform.note" placeholder="opcionalno">${esc(f.note)}</textarea>`);
@@ -1416,7 +1495,7 @@ function shrinkImage(src, max, cb) {
 }
 function openVehicleForm(v) {
   S.editingId = v ? v.id : null;
-  const f = { type: 'Automobil', brand: '', model: '', year: '', vin: '', plate: '', mileage: '', workHours: '', serviceInterval: '', engineNo: '', registrationDate: '', insuranceDate: '', bodyType: '', photo: '', notes: '', tires: { summer: emptyTire(), winter: emptyTire() } };
+  const f = { type: 'Automobil', brand: '', model: '', year: '', vin: '', plate: '', mileage: '', workHours: '', serviceInterval: '', engineNo: '', motoKind: '', registrationDate: '', insuranceDate: '', bodyType: '', photo: '', notes: '', tires: { summer: emptyTire(), winter: emptyTire() } };
   if (v) Object.keys(f).forEach(k => { if (v[k] !== undefined) f[k] = k === 'tires' ? JSON.parse(JSON.stringify(v.tires)) : v[k]; });
   S.form = f; go('addVehicle');
 }
@@ -1471,7 +1550,7 @@ function exportPDF() {
   const tyre = (k, n) => { const t = v.tires[k]; return `<tr><th>${n}</th><td>${e(fmtDim(t.size) || '—')}</td><td>${e(fmtDOT(t.dot) || '—')}</td><td>${e(pressLine(t))}</td><td>${t.torque ? e(t.torque) + ' Nm' : '—'}</td></tr>`; };
   const total = v.services.reduce((a, s) => a + (parseFloat(s.total) || 0), 0);
   const html = `<html><head><meta charset="UTF-8"><title>Izvještaj - ${e(v.brand)} ${e(v.model)}</title><style>body{font-family:Arial,sans-serif;padding:36px;color:#111}h1{color:#1e40af}table{width:100%;border-collapse:collapse;margin-top:12px}th,td{border:1px solid #ddd;padding:7px;text-align:left;font-size:13px;vertical-align:top}th{background:#f1f5f9}small{color:#555}.total{font-size:1.3em;font-weight:bold;margin-top:16px}</style></head><body>
-  <h1>Izvještaj o vozilu</h1><p><strong>${e(v.brand)} ${e(v.model)}</strong>${v.plate ? ' · ' + e(v.plate) : ''}</p><p>Tip vozila: ${e(v.type || 'Automobil')}<br>Broj šasije: ${e(v.vin || '—')}${hasEngineNo(v.type) ? '<br>Broj / oznaka motora: ' + e(v.engineNo || '—') : ''}<br>Kilometraža: ${e(fmtNum(v.mileage))} km${(!isCar(v.type) && hasHours(v)) ? '<br>Radni sati: ' + e(fmtNum(v.workHours)) + ' h' : ''}<br>Godište: ${e(v.year || '—')}<br>Registracija do: ${fmtDate(v.registrationDate)}<br>Osiguranje do: ${fmtDate(v.insuranceDate)}</p>
+  <h1>Izvještaj o vozilu</h1><p><strong>${e(v.brand)} ${e(v.model)}</strong>${v.plate ? ' · ' + e(v.plate) : ''}</p><p>Tip vozila: ${e(v.type || 'Automobil')}<br>Broj šasije: ${e(v.vin || '—')}${hasEngineNo(v.type) ? '<br>Broj / oznaka motora: ' + e(v.engineNo || '—') : ''}${v.type === 'Motocikl' && v.motoKind ? '<br>Vrsta motocikla: ' + e(v.motoKind) : ''}<br>Kilometraža: ${e(fmtNum(v.mileage))} km${(!isCar(v.type) && hasHours(v)) ? '<br>Radni sati: ' + e(fmtNum(v.workHours)) + ' h' : ''}<br>Godište: ${e(v.year || '—')}<br>Registracija do: ${fmtDate(v.registrationDate)}<br>Osiguranje do: ${fmtDate(v.insuranceDate)}</p>
   <h2>Gume</h2><table><tr><th></th><th>Dimenzija</th><th>DOT</th><th>Tlak (prednje / stražnje)</th><th>Stezanje</th></tr>${tyre('summer', 'Ljetne')}${tyre('winter', 'Zimske')}</table>
   <h2>Servisna povijest</h2><table><tr><th>Datum</th><th>Kilometraža / sati</th><th>Servis</th><th>Iznos</th></tr>${sv || '<tr><td colspan="4">Nema servisa</td></tr>'}</table><div class="total">Ukupno: ${fmtMoney(total)}</div><p style="margin-top:36px;font-size:.8em;color:#666">Generirano iz aplikacije Servisni Intervali</p></body></html>`;
   const win = window.open('', '_blank');
@@ -1529,6 +1608,7 @@ document.addEventListener('click', async (ev) => {
     case 'newVehicle': openVehicleForm(null); break;
     case 'editVehicle': openVehicleForm(sel()); break;
     case 'ftype': S.form.type = v; render(); break;
+    case 'motoKind': S.form.motoKind = S.form.motoKind === v ? '' : v; render(); break;
     case 'rmPhoto': S.form.photo = ''; render(); break;
     case 'saveVehicle': saveVehicle(); break;
     case 'deleteVehicle': if (confirm('Obrisati vozilo sa svim servisima i dokumentima?')) { S.vehicles = S.vehicles.filter(x => x.id !== S.editingId); S.selId = null; S.editingId = null; persist(); go('home'); } break;
