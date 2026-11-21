@@ -308,8 +308,8 @@ textarea.inp{min-height:70px}
 <div id="sheet" class="hidden"></div>
 <div id="tyreNote" class="tyre-note" aria-hidden="true"></div>
 <script>
-// ===== Servisni Intervali 1.4.5 =====
-window.APP_VERSION = '1.4.5';
+// ===== Servisni Intervali 1.4.6 =====
+window.APP_VERSION = '1.4.6';
 (function () {
   if (window.__SI_NOW != null || window.__SI_NO_SPLASH) { const s = document.getElementById('splash'); if (s) s.remove(); }
 
@@ -471,6 +471,40 @@ function emptyServiceForm(v) {
     custom: []
   };
 }
+function serviceToForm(s, v) {
+  const f = emptyServiceForm(v);
+  f.type = s.type || 'regular';
+  f.date = s.date || '';
+  f.mileage = (s.mileage !== undefined && s.mileage !== '') ? s.mileage : '';
+  f.workHours = (s.workHours !== undefined && s.workHours !== '') ? s.workHours : '';
+  f.note = s.note || '';
+  const known = {}; PARTS.forEach(p => { known[p.key] = p; });
+  (s.parts || []).forEach(p => {
+    if (p.key && known[p.key]) {
+      const fp = f.parts.find(x => x.key === p.key); if (!fp) return;
+      fp.on = true; fp.spec = p.spec || ''; fp.grade = p.grade || ''; fp.liters = p.liters || '';
+      fp.price = (p.price === 0 || p.price) ? p.price : '';
+      const brands = known[p.key].brands || [];
+      if (p.brand && brands.indexOf(p.brand) >= 0) fp.brand = p.brand;
+      else if (p.brand) { fp.brand = 'Drugo'; fp.brandOther = p.brand; }
+    } else {
+      f.custom.push({ name: p.name || 'Stavka', spec: p.spec || '', price: (p.price === 0 || p.price) ? p.price : '' });
+    }
+  });
+  (s.items || []).forEach(it => {
+    if (it && it.name) f.custom.push({ name: it.name, spec: it.spec || '', price: (it.qty ? (Number(it.qty) || 1) * (num(it.price) || 0) : it.price) || '' });
+  });
+  return f;
+}
+function openServiceEdit(vid, sid) {
+  const v = S.vehicles.find(x => x.id === vid), s = v && v.services.find(x => x.id === sid);
+  if (!s) return;
+  S.selId = vid;
+  S.sform = serviceToForm(s, v);
+  S.sform.editId = sid;
+  S.sform.backView = (S.view === 'services') ? 'services' : 'history';
+  go('addService');
+}
 
 // ---------- Podaci ----------
 function lsGet(k, d) { try { const v = JSON.parse(localStorage.getItem(k)); return v === null || v === undefined ? d : v; } catch (e) { return d; } }
@@ -479,6 +513,10 @@ function isCar(t) { return !t || t === 'Automobil'; }
 function hasHours(v) { return v && v.workHours !== '' && v.workHours !== null && v.workHours !== undefined && !isNaN(Number(v.workHours)); }
 function usageText(v) { if (!v) return ''; if (!isCar(v.type) && hasHours(v)) return fmtNum(v.workHours) + ' h'; return fmtNum(v.mileage) + ' km'; }
 function serviceUsage(s) { if (s && s.workHours !== '' && s.workHours !== null && s.workHours !== undefined) return fmtNum(s.workHours) + ' h'; return fmtNum(s ? s.mileage : 0) + ' km'; }
+function bumpVehicleFromServices(v) {
+  const maxKm = (v.services || []).reduce((m, s) => Math.max(m, Number(s.mileage) || 0), 0);
+  if (maxKm > (Number(v.mileage) || 0)) v.mileage = maxKm;
+}
 const TYPES = [{ value: 'Automobil', icon: '🚗' }, { value: 'Bager', icon: '🏗️' }, { value: 'Traktor', icon: '🚜' }, { value: 'ATV', icon: '🏍️' }];
 function typeIcon(t) { const x = TYPES.find(y => y.value === (t || 'Automobil')); return x ? x.icon : '🚗'; }
 
@@ -1011,7 +1049,8 @@ function sformTotal() {
 }
 function vAddService() {
   const v = sel(), f = S.sform;
-  let h = topbar('Natrag', v, 'backVehicle') + titleRow('wrench', 'Novi servis');
+  const editing = !!(f && f.editId);
+  let h = topbar('Natrag', v, 'backService') + titleRow('wrench', editing ? 'Uredi servis' : 'Novi servis');
   if (v) h += `<div class="title-sub">${esc(v.brand + ' ' + v.model)}</div>`;
   h += `<div class="grid2">${field('Datum', inp('sform.date', f.date, 'type="date"'))}${field('Kilometraža (km)', inp('sform.mileage', f.mileage, 'inputmode="numeric" placeholder="npr. 121000"'))}</div>`;
   h += `<div class="grid2">${field('Vrsta servisa', `<select class="inp" data-f="sform.type">${SERVICE_TYPES.map(t => `<option value="${t[0]}" ${f.type === t[0] ? 'selected' : ''}>${t[1]}</option>`).join('')}</select>`)}${v && !isCar(v.type) ? field('Radni sati (h)', inp('sform.workHours', f.workHours, 'inputmode="decimal"')) : '<div></div>'}</div>`;
@@ -1021,6 +1060,7 @@ function vAddService() {
   h += `<button class="add-row" data-a="addCustom">+ Dodaj stavku</button>`;
   h += field('Napomena', `<textarea class="inp" data-f="sform.note" placeholder="opcionalno">${esc(f.note)}</textarea>`);
   h += `<div class="glass totalbar"><div><div class="tl">Ukupno</div><div class="tv" id="stotal">${fmtMoney(sformTotal())}</div></div><button class="btn btn-primary" data-a="saveService">Spremi</button></div>`;
+  if (editing) h += `<button class="btn btn-danger" style="margin-top:8px" data-a="deleteService">${ic('trash')} Obriši servis</button>`;
   return h;
 }
 
@@ -1036,7 +1076,11 @@ function timelineItem(v, s, showV) {
     <div class="sd">${fmtDate(s.date)}</div>${showV ? `<div class="sv">${typeIcon(v.type)} ${esc(v.brand + ' ' + v.model)}</div>` : ''}
     <div class="st">${esc(serviceTitle(s))}</div><div class="sk">${serviceUsage(s)}</div>${chips ? `<div class="schips">${chips}</div>` : ''}<div class="sp">${fmtMoney(s.total)}</div></button></div>`;
 }
-function sortServices(a) { return a.sort((x, y) => String(y.s.date || '').localeCompare(String(x.s.date || '')) || (y.s.id || 0) - (x.s.id || 0)); }
+function cmpServices(a, b) {
+  const km = (s) => Number(s && s.mileage) || 0;
+  return (km(b) - km(a)) || String((b && b.date) || '').localeCompare(String((a && a.date) || '')) || ((b && b.id) || 0) - ((a && a.id) || 0);
+}
+function sortServices(a) { return a.sort((x, y) => cmpServices(x.s, y.s)); }
 function vHistory() {
   const v = sel(); if (!v) { S.view = 'services'; return vServices(); }
   let h = topbar('Natrag', v, 'backVehicle') + titleRow('clock', 'Povijest servisa');
@@ -1138,7 +1182,7 @@ function sheetHTML() {
     let rows = '';
     (s.parts || []).forEach(p => { rows += `<tr><td><b style="font-weight:650">${esc(partLabel(p))}</b><div style="font-size:12px;color:#94a3b8">${esc(partSummary(p))}</div></td><td class="r">${p.price !== '' && p.price !== undefined ? fmtMoney(num(p.price) || 0) : '—'}</td></tr>`; });
     (s.items || []).forEach(it => { rows += `<tr><td>${esc(it.name)}<div style="font-size:12px;color:#94a3b8">${(it.qty || 0)} × ${fmtMoney(it.price || 0)}</div></td><td class="r">${fmtMoney((it.qty || 0) * (it.price || 0))}</td></tr>`; });
-    return `<div class="sheet">${head('wrench', esc(serviceTitle(s)))}<div class="title-sub" style="margin:0">${esc(v.brand + ' ' + v.model)} · ${fmtDate(s.date)} · ${serviceUsage(s)}</div>${rows ? `<table class="tbl">${rows}</table>` : '<p>Nema stavki</p>'}${s.note ? `<p style="font-size:13px">${esc(s.note)}</p>` : ''}<div style="text-align:right;font-size:19px;font-weight:750;color:#fff">Ukupno: ${fmtMoney(s.total)}</div><button class="btn btn-danger" data-a="deleteService">${ic('trash')} Obriši servis</button></div>`;
+    return `<div class="sheet">${head('wrench', esc(serviceTitle(s)))}<div class="title-sub" style="margin:0">${esc(v.brand + ' ' + v.model)} · ${fmtDate(s.date)} · ${serviceUsage(s)}</div>${rows ? `<table class="tbl">${rows}</table>` : '<p>Nema stavki</p>'}${s.note ? `<p style="font-size:13px">${esc(s.note)}</p>` : ''}<div style="text-align:right;font-size:19px;font-weight:750;color:#fff">Ukupno: ${fmtMoney(s.total)}</div><button class="btn btn-primary" data-a="editService">Uredi</button><button class="btn btn-danger" data-a="deleteService">${ic('trash')} Obriši servis</button></div>`;
   }
   return '';
 }
@@ -1198,11 +1242,21 @@ function saveService() {
   f.custom.filter(p => p.name || p.price).forEach(p => parts.push({ key: 'custom', name: p.name || 'Stavka', brand: '', spec: p.spec, grade: '', liters: '', price: p.price === '' ? '' : (num(p.price) || 0) }));
   if (!parts.length && !confirm('Nisi odabrao nijedan dio. Spremiti servis bez stavki?')) return;
   const hours = (!isCar(v.type) && f.workHours !== '') ? Number(String(f.workHours).replace(',', '.')) : '';
-  const s = { id: Date.now(), type: f.type, date: f.date, mileage: Number(String(f.mileage).replace(/\D/g, '')) || 0, workHours: isNaN(hours) ? '' : hours, parts, items: [], note: f.note, total: sformTotal().toFixed(2) };
-  v.services.push(s);
-  if (s.mileage > (Number(v.mileage) || 0)) v.mileage = s.mileage;
+  const data = { type: f.type, date: f.date, mileage: Number(String(f.mileage).replace(/\D/g, '')) || 0, workHours: isNaN(hours) ? '' : hours, parts, items: [], note: f.note, total: sformTotal().toFixed(2) };
+  let s;
+  if (f.editId) {
+    const i = v.services.findIndex(x => Number(x.id) === Number(f.editId));
+    if (i < 0) return;
+    s = Object.assign({}, v.services[i], data, { id: f.editId });
+    v.services[i] = s;
+  } else {
+    s = Object.assign({ id: Date.now() }, data);
+    v.services.push(s);
+  }
+  bumpVehicleFromServices(v);
   if (s.workHours !== '' && (!hasHours(v) || s.workHours > Number(v.workHours))) v.workHours = s.workHours;
-  persist(); go('history');
+  persist();
+  go(f.backView || 'history');
 }
 function openDocument(d) {
   try {
@@ -1213,7 +1267,7 @@ function openDocument(d) {
 }
 function exportPDF() {
   const v = sel(); if (!v) return; const e = esc;
-  const sv = v.services.slice().sort((a, b) => String(a.date).localeCompare(String(b.date))).map(s => `<tr><td>${fmtDate(s.date)}</td><td>${e(serviceUsage(s))}</td><td>${e(serviceTitle(s))}<br><small>${e([...(s.parts || []).map(p => partLabel(p) + (partSummary(p) ? ' (' + partSummary(p) + ')' : '')), ...(s.items || []).map(i => i.name)].join(', '))}</small></td><td>${e(fmtMoney(s.total))}</td></tr>`).join('');
+  const sv = v.services.slice().sort(cmpServices).map(s => `<tr><td>${fmtDate(s.date)}</td><td>${e(serviceUsage(s))}</td><td>${e(serviceTitle(s))}<br><small>${e([...(s.parts || []).map(p => partLabel(p) + (partSummary(p) ? ' (' + partSummary(p) + ')' : '')), ...(s.items || []).map(i => i.name)].join(', '))}</small></td><td>${e(fmtMoney(s.total))}</td></tr>`).join('');
   const tyre = (k, n) => { const t = v.tires[k]; return `<tr><th>${n}</th><td>${e(fmtDim(t.size) || '—')}</td><td>${e(fmtDOT(t.dot) || '—')}</td><td>${e(pressLine(t))}</td><td>${t.torque ? e(t.torque) + ' Nm' : '—'}</td></tr>`; };
   const total = v.services.reduce((a, s) => a + (parseFloat(s.total) || 0), 0);
   const html = `<html><head><meta charset="UTF-8"><title>Izvještaj - ${e(v.brand)} ${e(v.model)}</title><style>body{font-family:Arial,sans-serif;padding:36px;color:#111}h1{color:#1e40af}table{width:100%;border-collapse:collapse;margin-top:12px}th,td{border:1px solid #ddd;padding:7px;text-align:left;font-size:13px;vertical-align:top}th{background:#f1f5f9}small{color:#555}.total{font-size:1.3em;font-weight:bold;margin-top:16px}</style></head><body>
@@ -1285,13 +1339,15 @@ document.addEventListener('click', async (ev) => {
     case 'savePress': { const t = sel().tires[S.tlakSet]; t.front = (document.getElementById('pF').value || '').trim(); t.rear = (document.getElementById('pR').value || '').trim(); persist(); S.sheet = null; render(); break; }
     case 'history': go('history'); break;
     case 'newService': S.sform = emptyServiceForm(sel()); go('addService'); break;
+    case 'editService': openServiceEdit(Number((S.sheetData || {}).vid || el.dataset.id), Number((S.sheetData || {}).sid || el.dataset.sid)); break;
+    case 'backService': go((S.sform && S.sform.backView) || (sel() ? 'history' : 'services')); break;
     case 'ptog': { const p = S.sform.parts[+el.dataset.i]; p.on = !p.on; render(); break; }
     case 'liters': { const p = S.sform.parts[+el.dataset.i]; p.liters = String(p.liters) === v ? '' : v; render(); break; }
     case 'addCustom': S.sform.custom.push({ name: '', spec: '', price: '' }); render(); break;
     case 'rmCustom': S.sform.custom.splice(+el.dataset.i, 1); render(); break;
     case 'saveService': saveService(); break;
     case 'viewService': S.sheet = 'service'; S.sheetData = { vid: Number(el.dataset.id), sid: Number(el.dataset.sid) }; render(); break;
-    case 'deleteService': { const d = S.sheetData, vv = S.vehicles.find(x => x.id === d.vid); if (vv && confirm('Obrisati ovaj servis?')) { vv.services = vv.services.filter(x => x.id !== d.sid); persist(); S.sheet = null; render(); } break; }
+    case 'deleteService': { const vid = (S.sheetData && S.sheetData.vid) || S.selId, sid = (S.sheetData && S.sheetData.sid) || (S.sform && S.sform.editId), vv = S.vehicles.find(x => x.id === vid), back = (S.sform && S.sform.backView) || (S.view === 'addService' ? 'history' : S.view); if (vv && sid && confirm('Obrisati ovaj servis?')) { vv.services = vv.services.filter(x => Number(x.id) !== Number(sid)); bumpVehicleFromServices(vv); persist(); S.sheet = null; if (S.view === 'addService') go(back === 'services' ? 'services' : 'history'); else render(); } break; }
     case 'newDoc': { const fromV = S.view === 'vehicle' && !!sel(); S.dform = { name: '', type: 'registration', expiry: '', file: '', vid: fromV ? sel().id : (S.vehicles[0] && S.vehicles[0].id), fromVehicle: fromV }; go('addDocument'); break; }
     case 'saveDoc': { const f = S.dform; if (!f.name.trim()) return alert('Upiši naziv dokumenta'); const vv = S.vehicles.find(x => String(x.id) === String(f.vid)); if (!vv) return; vv.documents.push({ id: Date.now(), name: f.name.trim(), type: f.type, expiry: f.expiry, file: f.file }); persist(); if (f.fromVehicle) { S.selId = vv.id; go('vehicle'); } else go('documents'); toast('Dokument je spremljen'); break; }
     case 'openDoc': { const vv = S.vehicles.find(x => x.id === Number(el.dataset.id)), d = vv && vv.documents.find(x => x.id === Number(el.dataset.did)); if (d && d.file) openDocument(d); else if (d && confirm('Dokument nema privitak. Obrisati ga?')) { vv.documents = vv.documents.filter(x => x !== d); persist(); render(); } break; }
