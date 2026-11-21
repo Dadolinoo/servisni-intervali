@@ -308,8 +308,8 @@ textarea.inp{min-height:70px}
 <div id="sheet" class="hidden"></div>
 <div id="tyreNote" class="tyre-note" aria-hidden="true"></div>
 <script>
-// ===== Servisni Intervali 1.4.4 =====
-window.APP_VERSION = '1.4.4';
+// ===== Servisni Intervali 1.4.5 =====
+window.APP_VERSION = '1.4.5';
 (function () {
   if (window.__SI_NOW != null || window.__SI_NO_SPLASH) { const s = document.getElementById('splash'); if (s) s.remove(); }
 
@@ -854,14 +854,8 @@ function vHome() {
     });
   });
   if (!S.vehicles.length) h += `<div class="glass empty"><div class="eic">${ic('car')}</div><p>Nema vozila. Dodaj prvo vozilo.</p><div style="margin-top:14px"><button class="btn btn-primary" data-a="newVehicle">${ic('plus')} Dodaj vozilo</button></div></div>`;
-  S.vehicles.forEach((v, i) => {
-    if (i === 0) {
-      h += `<button class="glass vhero" data-a="open" data-id="${v.id}" style="text-align:left;padding:0;display:block;width:100%"><div class="ph">${vehImg(v)}<span class="chip l">${typeIcon(v.type)} ${esc(v.type || 'Automobil')}</span><span class="chip r">${esc(v.brand)}</span></div>
-      <div class="vb"><div class="name">${esc(v.brand + ' ' + v.model)}</div><div class="km">${usageText(v)}</div>
-      <div class="meta"><div><div class="mk">Šasija</div><div class="mv">${esc(v.vin || '—')}</div></div><div style="text-align:right"><div class="mk">Godište</div><div class="mv plain">${esc(v.year || '—')}</div></div></div>${v.plate ? `<div style="margin-top:8px"><span class="plate" style="margin-top:0">${esc(v.plate)}</span></div>` : ''}</div></button>`;
-    } else {
-      h += `<button class="glass vsmall" data-a="open" data-id="${v.id}"><div class="thumb">${hasImage(v) ? `<img src="${esc(photoOf(v))}" alt="" loading="lazy">` : typeIcon(v.type)}</div><div class="vi"><b>${esc(v.brand + ' ' + v.model)}</b><div class="vk">${usageText(v)}</div>${v.plate ? `<span class="plate">${esc(v.plate)}</span>` : ''}</div><div class="chev">${ic('chev')}</div></button>`;
-    }
+  S.vehicles.forEach((v) => {
+    h += `<button class="glass vsmall" data-a="open" data-id="${v.id}"><div class="thumb">${hasImage(v) ? `<img src="${esc(photoOf(v))}" alt="" loading="lazy">` : typeIcon(v.type)}</div><div class="vi"><b>${esc(v.brand + ' ' + v.model)}</b><div class="vk">${usageText(v)}</div>${v.plate ? `<span class="plate">${esc(v.plate)}</span>` : ''}</div><div class="chev">${ic('chev')}</div></button>`;
   });
   return h;
 }
