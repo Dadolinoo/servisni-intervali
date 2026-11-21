@@ -320,8 +320,8 @@ textarea.inp{min-height:70px}
 <div id="sheet" class="hidden"></div>
 <div id="tyreNote" class="tyre-note" aria-hidden="true"></div>
 <script>
-// ===== Servisni Intervali 1.4.7 =====
-window.APP_VERSION = '1.4.7';
+// ===== Servisni Intervali 1.4.8 =====
+window.APP_VERSION = '1.4.8';
 (function () {
   if (window.__SI_NOW != null || window.__SI_NO_SPLASH) { const s = document.getElementById('splash'); if (s) s.remove(); }
 
@@ -581,13 +581,126 @@ const S = {
   appVersion: window.APP_VERSION, swVersion: '', remoteVersion: '', updateAvailable: false, updateDismissed: false, updateStatus: '', refreshing: false,
   auth: lsGet('si_auth', null), sync: Object.assign({ lastSync: '', dirty: false, state: '' }, lsGet('si_sync', {}))
 };
-try { localStorage.setItem('vehicles', JSON.stringify(S.vehicles)); } catch (e) {}
 function sel() { return S.vehicles.find(v => v.id === S.selId) || null; }
+
+const IDB_NAME = 'si-blobs', IDB_STORE = 'files';
+function isDataUrl(s) { return typeof s === 'string' && s.slice(0, 5) === 'data:'; }
+function isBlobRef(s) { return typeof s === 'string' && s.slice(0, 4) === 'idb:'; }
+function photoRef(vid) { return 'idb:photo:' + vid; }
+function docRef(vid, did) { return 'idb:doc:' + vid + ':' + did; }
+function blobKey(ref) { return String(ref || '').replace(/^idb:/, ''); }
+function blobMatches(a, b) { return a === b || (typeof a === 'string' && typeof b === 'string' && a.length === b.length && a.slice(0, 64) === b.slice(0, 64) && a.slice(-64) === b.slice(-64)); }
+let _idb;
+function openBlobs() {
+  if (_idb) return Promise.resolve(_idb);
+  return new Promise((res, rej) => {
+    const r = indexedDB.open(IDB_NAME, 1);
+    r.onupgradeneeded = () => { if (!r.result.objectStoreNames.contains(IDB_STORE)) r.result.createObjectStore(IDB_STORE); };
+    r.onsuccess = () => { _idb = r.result; _idb.onclose = () => { _idb = null; }; res(_idb); };
+    r.onerror = () => rej(r.error);
+  });
+}
+function idbOp(mode, fn) {
+  return openBlobs().then(db => new Promise((res, rej) => {
+    const tx = db.transaction(IDB_STORE, mode), st = tx.objectStore(IDB_STORE), req = fn(st);
+    tx.oncomplete = () => res(req && 'result' in req ? req.result : undefined);
+    tx.onerror = () => rej(tx.error || (req && req.error));
+  }));
+}
+function idbPut(key, val) { return idbOp('readwrite', st => st.put(val, key)); }
+function idbGet(key) { return idbOp('readonly', st => st.get(key)); }
+function idbDel(key) { return idbOp('readwrite', st => st.delete(key)); }
+function idbKeys() { return idbOp('readonly', st => st.getAllKeys()); }
+async function writeAndVerifyBlobs(list) {
+  for (const v of list || []) {
+    if (isDataUrl(v.photo)) {
+      const k = blobKey(photoRef(v.id));
+      await idbPut(k, v.photo);
+      if (!blobMatches(await idbGet(k), v.photo)) throw new Error('idb-photo');
+    }
+    for (const d of v.documents || []) {
+      if (isDataUrl(d.file)) {
+        const k = blobKey(docRef(v.id, d.id));
+        await idbPut(k, d.file);
+        if (!blobMatches(await idbGet(k), d.file)) throw new Error('idb-doc');
+      }
+    }
+  }
+  for (const v of list || []) {
+    if (isBlobRef(v.photo) || isDataUrl(v.photo)) {
+      if (!(await idbGet(blobKey(isBlobRef(v.photo) ? v.photo : photoRef(v.id))))) throw new Error('idb-photo-missing');
+    }
+    for (const d of v.documents || []) {
+      if (isBlobRef(d.file) || isDataUrl(d.file)) {
+        if (!(await idbGet(blobKey(isBlobRef(d.file) ? d.file : docRef(v.id, d.id))))) throw new Error('idb-doc-missing');
+      }
+    }
+  }
+}
+function slimVehicles(list) {
+  return (list || []).map(v => {
+    const n = Object.assign({}, v);
+    if (isDataUrl(v.photo) || isBlobRef(v.photo)) n.photo = v.photo ? photoRef(v.id) : '';
+    n.documents = (v.documents || []).map(d => {
+      const nd = Object.assign({}, d);
+      if (isDataUrl(d.file) || isBlobRef(d.file)) nd.file = d.file ? docRef(v.id, d.id) : '';
+      return nd;
+    });
+    return n;
+  });
+}
+function wantedBlobKeys(list) {
+  const s = {};
+  (list || []).forEach(v => {
+    if (isDataUrl(v.photo) || isBlobRef(v.photo)) s['photo:' + v.id] = 1;
+    (v.documents || []).forEach(d => { if (isDataUrl(d.file) || isBlobRef(d.file)) s['doc:' + v.id + ':' + d.id] = 1; });
+  });
+  return s;
+}
+async function pruneBlobs(list) {
+  const keep = wantedBlobKeys(list), keys = await idbKeys();
+  for (const k of keys || []) { if (!keep[k]) await idbDel(k); }
+}
+async function hydrateFromIdb() {
+  for (const v of S.vehicles) {
+    if (isBlobRef(v.photo)) { const got = await idbGet(blobKey(v.photo)); if (got) v.photo = got; }
+    for (const d of v.documents || []) {
+      if (isBlobRef(d.file)) { const got = await idbGet(blobKey(d.file)); if (got) d.file = got; }
+    }
+  }
+}
+function hasInlineBlobs(list) { return (list || []).some(v => isDataUrl(v.photo) || (v.documents || []).some(d => isDataUrl(d.file))); }
+let persistChain = Promise.resolve();
+async function persistLocal() {
+  let idbOk = false;
+  try { await writeAndVerifyBlobs(S.vehicles); idbOk = true; } catch (e) { idbOk = false; }
+  if (idbOk) {
+    const slimJson = JSON.stringify(slimVehicles(S.vehicles));
+    try {
+      localStorage.setItem('vehicles', slimJson);
+    } catch (e) {
+      const prev = localStorage.getItem('vehicles');
+      try { localStorage.removeItem('vehicles'); localStorage.setItem('vehicles', slimJson); }
+      catch (e2) {
+        if (prev != null) { try { localStorage.setItem('vehicles', prev); } catch (e3) {} }
+        toast('Memorija na uređaju je puna – podaci možda nisu spremljeni.', 6000);
+        throw e2;
+      }
+    }
+    try { await pruneBlobs(S.vehicles); } catch (e) {}
+    return;
+  }
+  try { localStorage.setItem('vehicles', JSON.stringify(S.vehicles)); }
+  catch (e) { toast('Memorija na uređaju je puna – podaci možda nisu spremljeni.', 6000); throw e; }
+}
 function persist() {
-  try { localStorage.setItem('vehicles', JSON.stringify(S.vehicles)); } catch (e) { alert('Memorija na uređaju je puna – podaci možda nisu spremljeni.'); }
   S.sync.dirty = true; lsSet('si_sync', S.sync);
   Cloud.schedule();
+  persistChain = persistChain.then(() => persistLocal(), () => persistLocal());
+  return persistChain;
 }
+window.__SI_persist = persist;
+window.__SI_vehicles = () => Promise.resolve(S.vehicles);
 
 // ---------- Cloud backup (Supabase REST, bez vanjskih biblioteka) ----------
 const Cloud = {
@@ -650,14 +763,14 @@ const Cloud = {
   applyRemote(r) {
     S.vehicles = ((r.data && r.data.vehicles) || []).map(normalizeVehicle);
     if (r.data && r.data.prefs) { S.prefs = Object.assign(S.prefs, r.data.prefs); lsSet('si_prefs', S.prefs); }
-    localStorage.setItem('vehicles', JSON.stringify(S.vehicles));
     S.sync = { lastSync: r.updated_at, dirty: false, state: 'ok' }; lsSet('si_sync', S.sync);
+    return persistLocal();
   },
   async afterLogin() {
     const r = await this.pull();
     const remote = r && r.data && Array.isArray(r.data.vehicles) ? r.data.vehicles : [];
     if (r && remote.length) {
-      if (!S.vehicles.length) { this.applyRemote(r); S.sheet = null; render(); toast('Podaci su vraćeni iz oblaka'); return; }
+      if (!S.vehicles.length) { await this.applyRemote(r); S.sheet = null; render(); toast('Podaci su vraćeni iz oblaka'); return; }
       if (JSON.stringify(remote) === JSON.stringify(S.vehicles)) { S.sync = { lastSync: r.updated_at, dirty: false, state: 'ok' }; lsSet('si_sync', S.sync); S.sheet = null; render(); return; }
       S.sheetData = { remote: r }; S.sheet = 'conflict'; render(); return;
     }
@@ -668,7 +781,7 @@ const Cloud = {
     try {
       if (S.sync.dirty) { await this.push(); return; }
       const r = await this.pull();
-      if (r && r.updated_at && (!S.sync.lastSync || new Date(r.updated_at) > new Date(S.sync.lastSync))) { this.applyRemote(r); render(); }
+      if (r && r.updated_at && (!S.sync.lastSync || new Date(r.updated_at) > new Date(S.sync.lastSync))) { await this.applyRemote(r); render(); }
       else if (!r) await this.push();
       else { S.sync.state = 'ok'; updateSyncUI(); }
     } catch (e) { S.sync.state = 'err'; S.sync.err = e.message; updateSyncUI(); }
@@ -1230,10 +1343,10 @@ function sheetHTML() {
   return '';
 }
 let toastT;
-function toast(t) {
+function toast(t, ms) {
   let el = document.getElementById('toast');
   if (!el) { el = document.createElement('div'); el.id = 'toast'; el.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);bottom:calc(100px + var(--sab));z-index:80;padding:10px 16px;border-radius:14px;background:rgba(15,30,55,.96);border:1px solid rgba(125,211,252,.4);color:#fff;font-size:14px;box-shadow:0 0 16px rgba(56,189,248,.25);width:max-content;max-width:88vw;text-align:center'; document.body.appendChild(el); }
-  el.textContent = t; el.style.display = 'block'; clearTimeout(toastT); toastT = setTimeout(() => { el.style.display = 'none'; }, 3500);
+  el.textContent = t; el.style.display = 'block'; clearTimeout(toastT); toastT = setTimeout(() => { el.style.display = 'none'; }, ms || 3500);
 }
 
 // ---------- Render ----------
@@ -1254,7 +1367,7 @@ function setPath(path, val) { const ks = path.split('.'); let o = S; for (let i 
 function readFile(file, cb) { const r = new FileReader(); r.onload = () => cb(r.result); r.readAsDataURL(file); }
 function shrinkImage(src, max, cb) {
   const img = new Image();
-  img.onload = () => { const s = Math.min(1, max / Math.max(img.width, img.height)); const c = document.createElement('canvas'); c.width = Math.round(img.width * s); c.height = Math.round(img.height * s); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); cb(c.toDataURL('image/jpeg', .82)); };
+  img.onload = () => { const s = Math.min(1, max / Math.max(img.width, img.height)); const c = document.createElement('canvas'); c.width = Math.round(img.width * s); c.height = Math.round(img.height * s); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); cb(c.toDataURL('image/jpeg', .75)); };
   img.onerror = () => cb(src); img.src = src;
 }
 function openVehicleForm(v) {
@@ -1414,7 +1527,7 @@ document.addEventListener('click', async (ev) => {
     case 'setPass': { const pw = document.getElementById('aPass').value || ''; if (pw.length < 6) { S.sheetData.err = 'Najmanje 6 znakova.'; return render(); } try { await Cloud.setPassword(pw); S.sheet = null; render(); toast('Lozinka je promijenjena'); } catch (e) { S.sheetData.err = e.message; render(); } break; }
     case 'syncNow': await Cloud.push(); if (S.sync.state === 'ok') toast('Spremljeno u oblak'); break;
     case 'logout': if (confirm('Odjaviti se? Podaci ostaju na mobitelu, ali se više neće spremati u oblak.')) { Cloud.logout(); S.sheet = null; render(); } break;
-    case 'useRemote': Cloud.applyRemote(S.sheetData.remote); S.selId = null; go('home'); toast('Podaci su vraćeni iz oblaka'); break;
+    case 'useRemote': await Cloud.applyRemote(S.sheetData.remote); S.selId = null; go('home'); toast('Podaci su vraćeni iz oblaka'); break;
     case 'useLocal': S.sheet = null; render(); await Cloud.push(); break;
   }
 });
@@ -1438,7 +1551,7 @@ document.addEventListener('change', (ev) => {
   }
   const a = el.dataset.a;
   if (a === 'photo' && el.files[0]) readFile(el.files[0], (d) => shrinkImage(d, 1280, (s) => { S.form.photo = s; render(); }));
-  if (a === 'docFile' && el.files[0]) { const f = el.files[0]; readFile(f, (d) => { if (/^image\//.test(f.type)) shrinkImage(d, 1800, (s) => { S.dform.file = s; render(); }); else { S.dform.file = d; render(); } }); }
+  if (a === 'docFile' && el.files[0]) { const f = el.files[0]; readFile(f, (d) => { if (/^image\//.test(f.type)) shrinkImage(d, 1280, (s) => { S.dform.file = s; render(); }); else { S.dform.file = d; render(); } }); }
   if (a === 'restore' && el.files[0]) { restoreBackup(el.files[0]); el.value = ''; }
 });
 window.addEventListener('resize', () => { if (S.view === 'tlak') layoutTlak(); });
@@ -1446,7 +1559,10 @@ document.addEventListener('visibilitychange', () => { if (document.visibilitySta
 window.addEventListener('online', () => { if (S.auth && S.sync.dirty) Cloud.push(); });
 
 // ---------- Start ----------
-(function start() {
+window.__SI_ready = (async function start() {
+  try { if (navigator.storage && navigator.storage.persist) await navigator.storage.persist(); } catch (e) {}
+  try { await hydrateFromIdb(); } catch (e) {}
+  if (hasInlineBlobs(S.vehicles)) { try { await persistLocal(); } catch (e) {} }
   const redirect = Cloud.handleRedirect();
   render(); readSwVersion(); fetchRemoteVersion();
   const tyreDelay = Number(window.__SI_TYRE_DELAY_MS);
