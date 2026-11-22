@@ -325,8 +325,8 @@ textarea.inp{min-height:70px}
 <div id="sheet" class="hidden"></div>
 <div id="tyreNote" class="tyre-note" aria-hidden="true"></div>
 <script>
-// ===== Servisni Intervali 1.5.2 =====
-window.APP_VERSION = '1.5.2';
+// ===== Servisni Intervali 1.5.3 =====
+window.APP_VERSION = '1.5.3';
 (function () {
   if (window.__SI_NOW != null || window.__SI_NO_SPLASH) { const s = document.getElementById('splash'); if (s) s.remove(); }
 
@@ -498,6 +498,22 @@ const MOTO_FILTER_BRANDS = ['HiFlo', 'K&N', 'Mahle', 'Champion', 'Bosch', 'Meiwa
 const MOTO_GRADES = ['10W-30', '10W-40', '10W-50', '15W-50', '20W-50', '5W-40'];
 const DIFF_GRADES = ['75W-90', '80W-90', '85W-140', 'SAE 90', 'UTTO'];
 function isMotoType(t) { return t === 'ATV' || t === 'Motocikl'; }
+function usesAxleTires(t) { return t === 'ATV' || t === 'Motocikl' || t === 'Traktor'; }
+function tyreSetMeta(v, set) {
+  if (usesAxleTires(v && v.type)) {
+    return set === 'winter'
+      ? { key: 'winter', label: 'Stražnje', title: 'Stražnje gume', icon: 'tyre', img: 'summer-road.jpg' }
+      : { key: 'summer', label: 'Prednje', title: 'Prednje gume', icon: 'tyre', img: 'summer-road.jpg' };
+  }
+  return set === 'winter'
+    ? { key: 'winter', label: 'Zimske', title: 'Zimske gume', icon: 'snow', img: 'winter-road.jpg' }
+    : { key: 'summer', label: 'Ljetne', title: 'Ljetne gume', icon: 'sun', img: 'summer-road.jpg' };
+}
+function axlePress(t) {
+  const n = num(t && t.front); const n2 = num(t && t.rear);
+  const x = !isNaN(n) ? n : n2;
+  return isNaN(x) ? '—' : fmtDec(x, 2) + ' bar';
+}
 function hasDiffOil(t) { return t === 'ATV' || t === 'Traktor'; }
 function brandIsFreeText(def, t) {
   if (!def) return false;
@@ -993,6 +1009,7 @@ function tyreCopy(info) {
 }
 function shouldShowTyrePopup() {
   if (!S.prefs.notifTyres) return false;
+  if (!S.vehicles.some(v => !usesAxleTires(v.type))) return false;
   const info = tyreWindow(); if (!info) return false;
   const st = tyreRemindState();
   if (st.done[info.season] === info.year) return false;
@@ -1116,12 +1133,12 @@ function nextServiceLeft(v) {
   return last + iv - (Number(v.mileage) || 0);
 }
 function tyreCard(v, set) {
-  const t = v.tires[set], w = set === 'winter';
-  return `<button class="tyrec" data-a="tlak" data-v="${set}"><div class="tbg" style="background-image:url('img/${w ? 'winter' : 'summer'}-road.jpg')"></div><div class="tsh"></div><div class="ticon">${ic(w ? 'snow' : 'sun', 1.8)}</div>
-  <div class="tbody"><div class="th">${ic(w ? 'snow' : 'sun')} ${w ? 'Zimske' : 'Ljetne'}</div>
+  const t = v.tires[set], m = tyreSetMeta(v, set), axle = usesAxleTires(v.type);
+  return `<button class="tyrec" data-a="tlak" data-v="${set}"><div class="tbg" style="background-image:url('img/${m.img}')"></div><div class="tsh"></div><div class="ticon">${ic(m.icon, 1.8)}</div>
+  <div class="tbody"><div class="th">${ic(m.icon)} ${m.label}</div>
   <div><div class="k">Dimenzija</div><div class="v">${esc(fmtDim(t.size) || '—')}</div></div>
   <div><div class="k">DOT</div><div class="v">${esc(fmtDOT(t.dot) || '—')}</div></div>
-  <div><div class="k">Tlak (prednje / stražnje)</div><div class="v">${esc(pressLine(t))}</div></div>
+  <div><div class="k">${axle ? 'Tlak' : 'Tlak (prednje / stražnje)'}</div><div class="v">${esc(axle ? axlePress(t) : pressLine(t))}</div></div>
   <div><div class="k">Stezanje</div><div class="v">${t.torque ? esc(String(t.torque).replace(/\s*nm$/i, '')) + ' Nm' : '—'}</div></div></div></button>`;
 }
 function vVehicle() {
@@ -1165,9 +1182,19 @@ function vTlak() {
     return fmtDec(n, 2) + '<small>bar</small>';
   };
   const card = (pos, lab, x) => `<button class="tcard ${pos} ${isNaN(num(x)) ? 'nov' : ''}" data-a="editPress"><div class="tr" style="background-image:url('img/tlak-tread.png')"></div><div class="lab">${lab}</div><div class="val">${val(x)}</div></button>`;
-  return `${topbar(v.model || v.brand || 'Natrag', v, 'backVehicle')}
-  <div class="title-row tlak-title"><div class="tpms">${TPMS_SVG}</div><h2>Tlak u gumama</h2></div>
-  <div class="title-sub">Preporučeni tlak za ${set === 'winter' ? 'zimske' : 'ljetne'} gume.</div>
+  const axle = usesAxleTires(v.type), meta = tyreSetMeta(v, set);
+  const top = `${topbar(v.model || v.brand || 'Natrag', v, 'backVehicle')}
+  <div class="title-row tlak-title"><div class="tpms">${TPMS_SVG}</div><h2>Tlak u gumama</h2></div>`;
+  const units = `<div class="unit"><button class="${S.unit === 'bar' ? 'on' : ''}" data-a="unit" data-v="bar">bar</button><button class="${S.unit === 'psi' ? 'on' : ''}" data-a="unit" data-v="psi">psi</button></div></div>`;
+  if (axle) {
+    const p = t.front || t.rear;
+    return top + `<div class="title-sub">Tlak za ${meta.label.toLowerCase()} gume.</div>
+  <div class="controls"><div class="seg"><button class="${set === 'summer' ? 'on' : ''}" data-a="tset" data-v="summer">${ic('tyre')} Prednje</button><button class="${set === 'winter' ? 'on' : ''}" data-a="tset" data-v="winter">${ic('tyre')} Stražnje</button></div>
+  ${units}
+  <button type="button" class="glass" data-a="editPress" style="padding:22px 16px;text-align:center"><div class="k">Tlak</div><div style="font-size:34px;font-weight:800;color:#fff;margin:6px 0 2px">${val(p)}</div><div style="font-size:13px;color:#94a3b8">${meta.title}</div></button>
+  <button class="glass info-bar" data-a="info"><div class="ii">${ic('info', 2.6)}</div><div>Tlak se mijenja s temperaturom.</div><div class="arr">${ic('chev')}</div></button>`;
+  }
+  return top + `<div class="title-sub">Preporučeni tlak za ${set === 'winter' ? 'zimske' : 'ljetne'} gume.</div>
   <div class="controls"><div class="seg"><button class="${set === 'summer' ? 'on' : ''}" data-a="tset" data-v="summer">${ic('sun')} Ljetne</button><button class="${set === 'winter' ? 'on' : ''}" data-a="tset" data-v="winter">${ic('snow')} Zimske</button></div>
   <div class="unit"><button class="${S.unit === 'bar' ? 'on' : ''}" data-a="unit" data-v="bar">bar</button><button class="${S.unit === 'psi' ? 'on' : ''}" data-a="unit" data-v="psi">psi</button></div></div>
   <div class="pmap" id="pmap" data-body="${bk}">
@@ -1208,7 +1235,7 @@ function layoutTlak() {
 function field(label, inner, hint) { return `<div class="field"><label>${label}</label>${inner}${hint ? `<div class="hint">${hint}</div>` : ''}</div>`; }
 function inp(path, val, attrs) { return `<input class="inp" data-f="${path}" value="${esc(val)}" ${attrs || ''}>`; }
 function vAddVehicle() {
-  const f = S.form, back = S.editingId ? 'backVehicle' : 'home';
+  const f = S.form, back = S.editingId ? 'backVehicle' : (S.pendingNewService ? 'cancelPendingService' : 'home');
   let h = topbar('Natrag', null, back) + titleRow(S.editingId ? 'pen' : 'plus', S.editingId ? 'Uredi vozilo' : 'Novo vozilo');
   h += `<div class="glass form-card"><h3>${ic('car')} Osnovni podaci</h3>
     <div><span class="flabel">Tip vozila</span><div class="types">${TYPES.map(t => `<button class="${f.type === t.value ? 'on' : ''}" data-a="ftype" data-v="${t.value}"><span>${t.icon}</span>${t.value}</button>`).join('')}</div></div>
@@ -1221,11 +1248,14 @@ function vAddVehicle() {
   </div>`;
   h += `<div class="glass form-card"><h3>${ic('cal')} Datumi</h3><div class="grid2">${field('Registracija vrijedi do', inp('form.registrationDate', f.registrationDate, 'type="date"'))}${field('Osiguranje vrijedi do', inp('form.insuranceDate', f.insuranceDate, 'type="date"'))}</div></div>`;
   ['summer', 'winter'].forEach(set => {
-    const t = f.tires[set], w = set === 'winter', p = 'form.tires.' + set + '.';
-    h += `<div class="glass form-card"><h3>${ic(w ? 'snow' : 'sun')} ${w ? 'Zimske gume' : 'Ljetne gume'}</h3>
-    <div class="grid2">${field('Dimenzija', inp(p + 'size', t.size, 'data-fmt="dim" placeholder="npr. 2055516"'), '2055516 → 205/55 R16')}${field('DOT', inp(p + 'dot', t.dot, 'data-fmt="dot" inputmode="numeric" placeholder="npr. 2423"'), '2423 → tjedan 24 / 2023')}</div>
-    <div class="grid2">${field('Tlak prednje (bar)', inp(p + 'front', t.front, 'inputmode="decimal" placeholder="npr. 2,5"'))}${field('Tlak stražnje (bar)', inp(p + 'rear', t.rear, 'inputmode="decimal" placeholder="npr. 2,4"'))}</div>
-    ${field('Stezanje vijaka (Nm)', inp(p + 'torque', t.torque, 'inputmode="numeric" placeholder="npr. 140"'))}</div>`;
+    const t = f.tires[set], m = tyreSetMeta(f, set), axle = usesAxleTires(f.type), p = 'form.tires.' + set + '.';
+    const dimPh = axle ? 'placeholder="npr. 1207017"' : 'placeholder="npr. 2055516"';
+    const dimHint = axle ? '1207017 → 120/70 R17' : '2055516 → 205/55 R16';
+    h += `<div class="glass form-card"><h3>${ic(m.icon)} ${m.title}</h3>
+    <div class="grid2">${field('Dimenzija', inp(p + 'size', t.size, 'data-fmt="dim" ' + dimPh), dimHint)}${field('DOT', inp(p + 'dot', t.dot, 'data-fmt="dot" inputmode="numeric" placeholder="npr. 2423"'), '2423 → tjedan 24 / 2023')}</div>`;
+    if (axle) h += field('Tlak (bar)', inp(p + 'front', t.front, 'inputmode="decimal" placeholder="npr. 1,4"'));
+    else h += `<div class="grid2">${field('Tlak prednje (bar)', inp(p + 'front', t.front, 'inputmode="decimal" placeholder="npr. 2,5"'))}${field('Tlak stražnje (bar)', inp(p + 'rear', t.rear, 'inputmode="decimal" placeholder="npr. 2,4"'))}</div>`;
+    h += field('Stezanje vijaka (Nm)', inp(p + 'torque', t.torque, 'inputmode="numeric" placeholder="npr. 140"')) + `</div>`;
   });
   if (isCar(f.type)) h += `<div class="glass form-card"><h3>${ic('tyre')} Prikaz tlaka</h3>${field('Oblik vozila (slika odozgo)', `<select class="inp" data-f="form.bodyType"><option value="">Automatski – ${esc(BODY[autoBody(f)].label)}</option>${Object.keys(BODY).map(k => `<option value="${k}" ${f.bodyType === k ? 'selected' : ''}>${BODY[k].label}</option>`).join('')}</select>`, 'Automatski se bira prema modelu.')}</div>`;
   h += `<div class="glass form-card"><h3>${ic('doc')} Ostalo</h3>${field('Bilješke', `<textarea class="inp" data-f="form.notes" placeholder="Ostale bilješke">${esc(f.notes)}</textarea>`)}
@@ -1360,14 +1390,29 @@ function svcGroupOpen(vid, isFirst) {
   if (st && Object.prototype.hasOwnProperty.call(st, String(vid))) return !!st[String(vid)];
   return !!isFirst;
 }
+function startNewServiceFromTab() {
+  const n = S.vehicles.length;
+  if (!n) { S.sheet = 'needVehicle'; S.sheetData = {}; render(); return; }
+  if (n === 1) {
+    S.selId = S.vehicles[0].id;
+    S.sform = emptyServiceForm(S.vehicles[0]);
+    S.sform.backView = 'services';
+    go('addService');
+    return;
+  }
+  S.sheet = 'pickVehicle';
+  S.sheetData = {};
+  render();
+}
 function vServices() {
   const groups = S.vehicles.filter(v => (v.services || []).length).slice();
   groups.sort((a, b) => lastServiceKey(b).localeCompare(lastServiceKey(a)));
   const nAll = groups.reduce((n, v) => n + v.services.length, 0);
   const total = groups.reduce((a, v) => a + v.services.reduce((x, s) => x + (parseFloat(s.total) || 0), 0), 0);
-  let h = `<div class="hd"><h1>Servisi</h1></div>`;
+  let h = `<div class="hd"><h1>Servisi</h1><div class="gbtns"><button class="gbtn primary" data-a="newServiceTop" aria-label="Novi servis">${ic('plus', 2.2)}</button></div></div>`;
   if (!groups.length) {
-    return h + `<div class="glass empty"><div class="eic">${ic('wrench')}</div><p>Još nema evidentiranih servisa.</p><p style="font-size:13px;color:#7c8ba1;margin-top:4px">Otvori vozilo i dodaj prvi servis.</p></div>`;
+    const hint = S.vehicles.length ? 'Dodaj prvi servis na gumbu Novi servis.' : 'Dodaj vozilo pa upiši prvi servis.';
+    return h + `<div class="glass empty"><div class="eic">${ic('wrench')}</div><p>Još nema evidentiranih servisa.</p><p style="font-size:13px;color:#7c8ba1;margin-top:4px">${hint}</p><div style="margin-top:14px"><button class="btn btn-primary" data-a="newServiceTop">${ic('plus')} Novi servis</button></div></div>`;
   }
   h += `<div class="title-sub" style="margin-top:-6px">${nAll} ${nAll === 1 ? 'servis' : 'servisa'} · ukupno ${fmtMoney(total)}</div>`;
   groups.forEach((v, i) => {
@@ -1462,8 +1507,19 @@ function sheetHTML() {
     return `<div class="sheet">${head('cloud', 'Backup u oblaku', true)}<p>Na tvom računu već postoji backup (${n} ${w(n)}, spremljen ${new Date(r.updated_at).toLocaleString('hr-HR')}). Na ovom mobitelu imaš ${m} ${w(m)}.</p>
       <button class="btn btn-primary" data-a="useRemote">Vrati podatke iz oblaka</button><button class="btn btn-ghost" data-a="useLocal">Zadrži podatke s ovog mobitela</button></div>`;
   }
+  if (sh === 'needVehicle') {
+    return `<div class="sheet">${head('car', 'Najprije dodaj vozilo')}<p style="font-size:14px;color:#cbd5e1;margin:0">Da upišeš servis, prvo dodaj vozilo.</p><button class="btn btn-primary" data-a="needVehicleGo">${ic('plus')} Dodaj vozilo</button></div>`;
+  }
+  if (sh === 'pickVehicle') {
+    const rows = S.vehicles.map(x => `<button type="button" class="set-row" data-a="pickVehicle" data-id="${x.id}"><div class="set-ico" style="font-size:18px">${typeIcon(x.type)}</div><div class="set-body"><b>${esc(x.brand + ' ' + x.model)}</b><span>${x.plate ? esc(x.plate) + ' · ' : ''}${esc(usageText(x))}</span></div><div class="chev">${ic('chev')}</div></button>`).join('');
+    return `<div class="sheet">${head('wrench', 'Novi servis')}<p class="title-sub" style="margin:0 0 4px">Odaberi vozilo</p><div class="glass set-card">${rows}</div></div>`;
+  }
   if (sh === 'press') {
-    const t = sel().tires[S.tlakSet];
+    const vv = sel(), t = vv.tires[S.tlakSet], axle = usesAxleTires(vv.type), meta = tyreSetMeta(vv, S.tlakSet);
+    if (axle) {
+      const cur = t.front || t.rear;
+      return `<div class="sheet">${head('tyre', 'Tlak – ' + meta.title.toLowerCase())}${field('Tlak (bar)', `<input class="inp" id="pF" inputmode="decimal" value="${esc(fmtBar(cur))}" placeholder="npr. 1,4">`)}<button class="btn btn-primary" data-a="savePress">Spremi</button></div>`;
+    }
     return `<div class="sheet">${head('tyre', 'Tlak – ' + (S.tlakSet === 'winter' ? 'zimske' : 'ljetne') + ' gume')}<div class="grid2">${field('Prednje (bar)', `<input class="inp" id="pF" inputmode="decimal" value="${esc(fmtBar(t.front))}" placeholder="npr. 2,5">`)}${field('Stražnje (bar)', `<input class="inp" id="pR" inputmode="decimal" value="${esc(fmtBar(t.rear))}" placeholder="npr. 2,4">`)}</div><p style="font-size:12.5px;color:#94a3b8">Preporučeni tlak piše na naljepnici u okviru vozačevih vrata ili na poklopcu spremnika goriva.</p><button class="btn btn-primary" data-a="savePress">Spremi</button></div>`;
   }
   if (sh === 'service') {
@@ -1523,7 +1579,15 @@ function saveVehicle() {
   const st = data.tires.summer.size || !data.tires.winter.size ? data.tires.summer : data.tires.winter; // stara polja za kompatibilnost
   data.tireSize = st.size; data.tireDOT = st.dot; data.tirePressure = pressLine(st) === '—' ? '' : pressLine(st); data.tireTorqueAlu = st.torque ? st.torque + ' Nm' : '';
   if (S.editingId) { const v = S.vehicles.find(x => x.id === S.editingId); Object.assign(v, data); S.selId = v.id; persist(); go('vehicle'); }
-  else { S.vehicles.push(normalizeVehicle(Object.assign({ id: Date.now(), services: [], documents: [] }, data))); persist(); go('home'); }
+  else {
+    const nv = normalizeVehicle(Object.assign({ id: Date.now(), services: [], documents: [] }, data));
+    S.vehicles.push(nv); persist();
+    if (S.pendingNewService) {
+      S.pendingNewService = false; S.selId = nv.id;
+      S.sform = emptyServiceForm(nv); S.sform.backView = 'services';
+      go('addService');
+    } else go('home');
+  }
 }
 function saveService() {
   const v = sel(); if (!v) return; const f = S.sform;
@@ -1557,11 +1621,11 @@ function openDocument(d) {
 function exportPDF() {
   const v = sel(); if (!v) return; const e = esc;
   const sv = v.services.slice().sort(cmpServices).map(s => `<tr><td>${fmtDate(s.date)}</td><td>${e(serviceUsage(s))}</td><td>${e(serviceTitle(s))}<br><small>${e([...(s.parts || []).map(p => partLabel(p) + (partSummary(p) ? ' (' + partSummary(p) + ')' : '')), ...(s.items || []).map(i => i.name)].join(', '))}</small></td><td>${e(fmtMoney(s.total))}</td></tr>`).join('');
-  const tyre = (k, n) => { const t = v.tires[k]; return `<tr><th>${n}</th><td>${e(fmtDim(t.size) || '—')}</td><td>${e(fmtDOT(t.dot) || '—')}</td><td>${e(pressLine(t))}</td><td>${t.torque ? e(t.torque) + ' Nm' : '—'}</td></tr>`; };
+  const tyre = (k, n) => { const t = v.tires[k]; return `<tr><th>${n}</th><td>${e(fmtDim(t.size) || '—')}</td><td>${e(fmtDOT(t.dot) || '—')}</td><td>${e(usesAxleTires(v.type) ? axlePress(t) : pressLine(t))}</td><td>${t.torque ? e(t.torque) + ' Nm' : '—'}</td></tr>`; };
   const total = v.services.reduce((a, s) => a + (parseFloat(s.total) || 0), 0);
   const html = `<html><head><meta charset="UTF-8"><title>Izvještaj - ${e(v.brand)} ${e(v.model)}</title><style>body{font-family:Arial,sans-serif;padding:36px;color:#111}h1{color:#1e40af}table{width:100%;border-collapse:collapse;margin-top:12px}th,td{border:1px solid #ddd;padding:7px;text-align:left;font-size:13px;vertical-align:top}th{background:#f1f5f9}small{color:#555}.total{font-size:1.3em;font-weight:bold;margin-top:16px}</style></head><body>
   <h1>Izvještaj o vozilu</h1><p><strong>${e(v.brand)} ${e(v.model)}</strong>${v.plate ? ' · ' + e(v.plate) : ''}</p><p>Tip vozila: ${e(v.type || 'Automobil')}<br>Broj šasije: ${e(v.vin || '—')}${hasEngineNo(v.type) ? '<br>Broj / oznaka motora: ' + e(v.engineNo || '—') : ''}${v.type === 'Motocikl' && v.motoKind ? '<br>Vrsta motocikla: ' + e(v.motoKind) : ''}<br>Kilometraža: ${e(fmtNum(v.mileage))} km${(!isCar(v.type) && hasHours(v)) ? '<br>Radni sati: ' + e(fmtNum(v.workHours)) + ' h' : ''}<br>Godište: ${e(v.year || '—')}<br>Registracija do: ${fmtDate(v.registrationDate)}<br>Osiguranje do: ${fmtDate(v.insuranceDate)}</p>
-  <h2>Gume</h2><table><tr><th></th><th>Dimenzija</th><th>DOT</th><th>Tlak (prednje / stražnje)</th><th>Stezanje</th></tr>${tyre('summer', 'Ljetne')}${tyre('winter', 'Zimske')}</table>
+  <h2>Gume</h2><table><tr><th></th><th>Dimenzija</th><th>DOT</th><th>${usesAxleTires(v.type) ? 'Tlak' : 'Tlak (prednje / stražnje)'}</th><th>Stezanje</th></tr>${tyre('summer', usesAxleTires(v.type) ? 'Prednje' : 'Ljetne')}${tyre('winter', usesAxleTires(v.type) ? 'Stražnje' : 'Zimske')}</table>
   <h2>Servisna povijest</h2><table><tr><th>Datum</th><th>Kilometraža / sati</th><th>Servis</th><th>Iznos</th></tr>${sv || '<tr><td colspan="4">Nema servisa</td></tr>'}</table><div class="total">Ukupno: ${fmtMoney(total)}</div><p style="margin-top:36px;font-size:.8em;color:#666">Generirano iz aplikacije Servisni Intervali</p></body></html>`;
   const win = window.open('', '_blank');
   if (win) { win.document.write(html); win.document.close(); setTimeout(() => win.print(), 500); return; }
@@ -1609,9 +1673,10 @@ document.addEventListener('click', async (ev) => {
   if (el.tagName === 'INPUT' || el.tagName === 'SELECT') return;
   const a = el.dataset.a, v = el.dataset.v;
   switch (a) {
-    case 'tab': go(v); break;
+    case 'tab': S.pendingNewService = false; go(v); break;
     case 'togSvcGroup': { const st = Object.assign({}, lsGet(SVC_GROUPS_LS, {}) || {}); st[String(el.dataset.id)] = el.getAttribute('aria-expanded') !== 'true'; lsSet(SVC_GROUPS_LS, st); render(); break; }
-    case 'home': case 'back': go('home'); break;
+    case 'home': case 'back': S.pendingNewService = false; go('home'); break;
+    case 'cancelPendingService': S.pendingNewService = false; go('services'); break;
     case 'docs': go('documents'); break;
     case 'backVehicle': go(sel() ? 'vehicle' : 'home'); break;
     case 'open': S.selId = Number(el.dataset.id); go('vehicle'); break;
@@ -1627,9 +1692,12 @@ document.addEventListener('click', async (ev) => {
     case 'unit': S.unit = v; lsSet('si_unit', v); render(); break;
     case 'info': toast('Pri padu temperature za 10 °C tlak padne za oko 0,1 bar. Provjeravaj tlak na hladnim gumama.'); break;
     case 'editPress': S.sheet = 'press'; S.sheetData = {}; render(); break;
-    case 'savePress': { const t = sel().tires[S.tlakSet]; t.front = (document.getElementById('pF').value || '').trim(); t.rear = (document.getElementById('pR').value || '').trim(); persist(); S.sheet = null; render(); break; }
+    case 'savePress': { const t = sel().tires[S.tlakSet], pr = document.getElementById('pR'); t.front = (document.getElementById('pF').value || '').trim(); if (pr) t.rear = (pr.value || '').trim(); else if (usesAxleTires(sel().type)) t.rear = ''; persist(); S.sheet = null; render(); break; }
     case 'history': go('history'); break;
     case 'newService': { if (el.dataset.id) S.selId = Number(el.dataset.id); S.sform = emptyServiceForm(sel()); S.sform.backView = (S.view === 'services') ? 'services' : 'history'; go('addService'); break; }
+    case 'newServiceTop': startNewServiceFromTab(); break;
+    case 'needVehicleGo': S.sheet = null; S.pendingNewService = true; openVehicleForm(null); break;
+    case 'pickVehicle': S.sheet = null; S.selId = Number(el.dataset.id); S.sform = emptyServiceForm(sel()); S.sform.backView = 'services'; go('addService'); break;
     case 'editService': openServiceEdit(Number(el.dataset.id || (S.sheetData || {}).vid), Number(el.dataset.sid || (S.sheetData || {}).sid)); break;
     case 'backService': go((S.sform && S.sform.backView) || (sel() ? 'history' : 'services')); break;
     case 'ptog': { const p = S.sform.parts[+el.dataset.i]; p.on = !p.on; render(); break; }
