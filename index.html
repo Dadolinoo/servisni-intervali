@@ -325,8 +325,8 @@ textarea.inp{min-height:70px}
 <div id="sheet" class="hidden"></div>
 <div id="tyreNote" class="tyre-note" aria-hidden="true"></div>
 <script>
-// ===== Servisni Intervali 1.5.3 =====
-window.APP_VERSION = '1.5.3';
+// ===== Servisni Intervali 1.5.4 =====
+window.APP_VERSION = '1.5.4';
 (function () {
   if (window.__SI_NOW != null || window.__SI_NO_SPLASH) { const s = document.getElementById('splash'); if (s) s.remove(); }
 
@@ -470,22 +470,22 @@ const PARTS = [
   { key: 'filter_goriva', name: 'Filter goriva', ico: '⛽', brands: FILTERS, spec: 'Oznaka' },
   { key: 'ulje', name: 'Ulje', ico: '💧', brands: ['Castrol', 'Mobil 1', 'Shell', 'Motul', 'Liqui Moly', 'Total', 'Elf', 'Valvoline', 'Fuchs', 'Ravenol', 'INA', 'OEM'], spec: 'Naziv (npr. Edge)', oil: true },
   { key: 'antifriz', name: 'Antifriz', ico: '❄️', brands: ['Castrol', 'Liqui Moly', 'Motul', 'Total', 'Shell', 'INA', 'OEM'], spec: 'Tip (npr. G13)' },
-  { key: 'kocion', name: 'Kočiono ulje', ico: '🧪', brands: ['ATE', 'Bosch', 'TRW', 'Castrol', 'Motul', 'OEM'], spec: 'Tip (npr. DOT 4)' },
-  { key: 'diskovi', name: 'Diskovi', ico: '⚙️', brands: ['Brembo', 'ATE', 'Zimmermann', 'TRW', 'Textar', 'Bosch', 'Ferodo', 'OEM'], spec: 'Pozicija (prednji / stražnji)', carBrake: true },
-  { key: 'plocice', name: 'Pločice', ico: '🛑', brands: ['Brembo', 'ATE', 'Textar', 'TRW', 'Ferodo', 'Bosch', 'Pagid', 'OEM'], spec: 'Pozicija (prednje / stražnje)', carBrake: true },
+  { key: 'kocion', name: 'Kočiono ulje', ico: '🧪', brands: ['ATE', 'Bosch', 'TRW', 'Castrol', 'Motul', 'OEM'], spec: 'Tip (npr. DOT 4)', hideOn: ['Bager'] },
+  { key: 'diskovi', name: 'Diskovi', ico: '⚙️', brands: ['Brembo', 'ATE', 'Zimmermann', 'TRW', 'Textar', 'Bosch', 'Ferodo', 'OEM'], spec: 'Pozicija (prednji / stražnji)', carBrake: true, hideOn: ['Bager'] },
+  { key: 'plocice', name: 'Pločice', ico: '🛑', brands: ['Brembo', 'ATE', 'Textar', 'TRW', 'Ferodo', 'Bosch', 'Pagid', 'OEM'], spec: 'Pozicija (prednje / stražnje)', carBrake: true, hideOn: ['Bager'] },
   { key: 'plocice_prednje', name: 'Pločice prednje', ico: '🛑', brands: MOTO_BRAKE_BRANDS, spec: 'Oznaka', motoBrake: true },
   { key: 'plocice_zadnje', name: 'Pločice zadnje', ico: '🛑', brands: MOTO_BRAKE_BRANDS, spec: 'Oznaka', motoBrake: true },
   { key: 'diskovi_prednji', name: 'Diskovi prednji', ico: '⚙️', brands: MOTO_BRAKE_BRANDS, spec: 'Oznaka', motoBrake: true },
   { key: 'diskovi_zadnji', name: 'Diskovi zadnji', ico: '⚙️', brands: MOTO_BRAKE_BRANDS, spec: 'Oznaka', motoBrake: true },
-  { key: 'remen', name: 'Zupčasti remen', ico: '➰', brands: ['Gates', 'Continental', 'Dayco', 'INA', 'SKF', 'Bosch', 'OEM'], spec: 'Oznaka (komplet)' },
-  { key: 'vodena', name: 'Vodena pumpa', ico: '💦', brands: ['SKF', 'INA', 'Hepu', 'Gates', 'Graf', 'OEM'], spec: 'Oznaka' },
-  { key: 'svjecice', name: 'Svjećice', ico: '⚡', brands: ['Bosch', 'NGK', 'Denso', 'Champion', 'Beru', 'OEM'], spec: 'Oznaka' },
-  { key: 'set_remen_pumpa', name: 'Set zupčastog remena s pumpom vode', ico: '➰', brands: ['Gates', 'Contitech', 'SKF', 'INA', 'Dayco'], spec: 'Oznaka (komplet)' },
-  { key: 'set_mikro_remen', name: 'Set mikro remena', ico: '🔗', brands: ['Gates', 'Contitech', 'SKF', 'INA', 'Dayco'], spec: 'Oznaka' },
-  { key: 'grijaci', name: 'Grijači motora', ico: '🔥', brands: ['Bosch', 'NGK', 'Beru', 'Denso', 'Champion'], spec: 'Oznaka', qty: true },
+  { key: 'remen', name: 'Zupčasti remen', ico: '➰', brands: ['Gates', 'Continental', 'Dayco', 'INA', 'SKF', 'Bosch', 'OEM'], spec: 'Oznaka (komplet)', hideOn: ['ATV', 'Motocikl', 'Traktor', 'Bager'] },
+  { key: 'vodena', name: 'Vodena pumpa', ico: '💦', brands: ['SKF', 'INA', 'Hepu', 'Gates', 'Graf', 'OEM'], spec: 'Oznaka', hideOn: ['ATV', 'Motocikl'] },
+  { key: 'svjecice', name: 'Svjećice', ico: '⚡', brands: ['Bosch', 'NGK', 'Denso', 'Champion', 'Beru', 'OEM'], spec: 'Oznaka', hideOn: ['Traktor', 'Bager'] },
+  { key: 'set_remen_pumpa', name: 'Set zupčastog remena s pumpom vode', ico: '➰', brands: ['Gates', 'Contitech', 'SKF', 'INA', 'Dayco'], spec: 'Oznaka (komplet)', hideOn: ['ATV', 'Motocikl', 'Traktor', 'Bager'] },
+  { key: 'set_mikro_remen', name: 'Set mikro remena', ico: '🔗', brands: ['Gates', 'Contitech', 'SKF', 'INA', 'Dayco'], spec: 'Oznaka', hideOn: ['ATV', 'Motocikl'] },
+  { key: 'grijaci', name: 'Grijači motora', ico: '🔥', brands: ['Bosch', 'NGK', 'Beru', 'Denso', 'Champion'], spec: 'Oznaka', qty: true, hideOn: ['ATV', 'Motocikl'] },
   { key: 'filter_hidraulike', name: 'Filter hidraulike', ico: '🧰', brands: FILTERS, spec: 'Oznaka', machine: true },
   { key: 'ulje_hidraulike', name: 'Ulje hidraulike', ico: '💧', brands: ['Castrol', 'Mobil', 'Shell', 'Motul', 'Liqui Moly', 'Total', 'Fuchs', 'INA', 'OEM'], spec: 'Naziv', hydOil: true, machine: true },
-  { key: 'gusjenice_kotaci', name: 'Izmjena gusjenica / kotača', ico: '⛓️', machine: true, trackWheel: true },
+  { key: 'gusjenice_kotaci', name: 'Izmjena gusjenica / kotača', ico: '⛓️', machine: true, trackWheel: true, hideOn: ['Traktor'] },
   { key: 'ulje_prednji_diff', name: 'Ulje prednjeg diferencijala', ico: '⚙️', spec: 'Naziv', diffOil: true },
   { key: 'ulje_zadnji_diff', name: 'Ulje zadnjeg diferencijala', ico: '⚙️', spec: 'Naziv', diffOil: true },
   { key: 'ulje_amortizera', name: 'Ulje amortizera', ico: '💧', brands: SHOCK_OIL_BRANDS, shockOil: true },
@@ -498,6 +498,9 @@ const MOTO_FILTER_BRANDS = ['HiFlo', 'K&N', 'Mahle', 'Champion', 'Bosch', 'Meiwa
 const MOTO_GRADES = ['10W-30', '10W-40', '10W-50', '15W-50', '20W-50', '5W-40'];
 const DIFF_GRADES = ['75W-90', '80W-90', '85W-140', 'SAE 90', 'UTTO'];
 function isMotoType(t) { return t === 'ATV' || t === 'Motocikl'; }
+function partHiddenForType(def, type) {
+  return !!(def && def.hideOn && def.hideOn.indexOf(type) >= 0);
+}
 function usesAxleTires(t) { return t === 'ATV' || t === 'Motocikl' || t === 'Traktor'; }
 function tyreSetMeta(v, set) {
   if (usesAxleTires(v && v.type)) {
@@ -1337,6 +1340,7 @@ function vAddService() {
     if (def && def.motoBrake && !moto && !p.on) return;
     if (def && def.carBrake && moto && !p.on) return;
     if (def && def.shockOil && !(v && v.type === 'Motocikl') && !p.on) return;
+    if (def && partHiddenForType(def, v && v.type) && !p.on) return;
     h += partRow(p, i, false);
   });
   f.custom.forEach((p, i) => { h += partRow(p, i, true); });
