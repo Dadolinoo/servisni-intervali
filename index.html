@@ -325,8 +325,8 @@ textarea.inp{min-height:70px}
 <div id="sheet" class="hidden"></div>
 <div id="tyreNote" class="tyre-note" aria-hidden="true"></div>
 <script>
-// ===== Servisni Intervali 1.5.4 =====
-window.APP_VERSION = '1.5.4';
+// ===== Servisni Intervali 1.5.5 =====
+window.APP_VERSION = '1.5.5';
 (function () {
   if (window.__SI_NOW != null || window.__SI_NO_SPLASH) { const s = document.getElementById('splash'); if (s) s.remove(); }
 
@@ -469,6 +469,7 @@ const PARTS = [
   { key: 'filter_kabine', name: 'Filter kabine', ico: '🍃', brands: FILTERS, spec: 'Oznaka', cabin: true },
   { key: 'filter_goriva', name: 'Filter goriva', ico: '⛽', brands: FILTERS, spec: 'Oznaka' },
   { key: 'ulje', name: 'Ulje', ico: '💧', brands: ['Castrol', 'Mobil 1', 'Shell', 'Motul', 'Liqui Moly', 'Total', 'Elf', 'Valvoline', 'Fuchs', 'Ravenol', 'INA', 'OEM'], spec: 'Naziv (npr. Edge)', oil: true },
+  { key: 'ulje_mjenjaca', name: 'Ulje mjenjača', ico: '💧', brands: ['Castrol', 'Mobil 1', 'Shell', 'Motul', 'Liqui Moly', 'Total', 'Elf', 'Valvoline', 'Fuchs', 'Ravenol', 'INA', 'ZF', 'Pentosin', 'OEM'], spec: 'Naziv (npr. ATF Dexron)', gearOil: true, hideOn: ['Motocikl', 'Bager'] },
   { key: 'antifriz', name: 'Antifriz', ico: '❄️', brands: ['Castrol', 'Liqui Moly', 'Motul', 'Total', 'Shell', 'INA', 'OEM'], spec: 'Tip (npr. G13)' },
   { key: 'kocion', name: 'Kočiono ulje', ico: '🧪', brands: ['ATE', 'Bosch', 'TRW', 'Castrol', 'Motul', 'OEM'], spec: 'Tip (npr. DOT 4)', hideOn: ['Bager'] },
   { key: 'diskovi', name: 'Diskovi', ico: '⚙️', brands: ['Brembo', 'ATE', 'Zimmermann', 'TRW', 'Textar', 'Bosch', 'Ferodo', 'OEM'], spec: 'Pozicija (prednji / stražnji)', carBrake: true, hideOn: ['Bager'] },
@@ -521,13 +522,13 @@ function hasDiffOil(t) { return t === 'ATV' || t === 'Traktor'; }
 function brandIsFreeText(def, t) {
   if (!def) return false;
   if (t === 'Bager' && (def.oil || def.hydOil)) return true;
-  if (t === 'Traktor' && (def.oil || def.hydOil || def.diffOil)) return true;
+  if (t === 'Traktor' && (def.oil || def.hydOil || def.diffOil || def.gearOil)) return true;
   return false;
 }
 function partBrands(def, t) {
   if (!def || brandIsFreeText(def, t)) return [];
   if (isMotoType(t) && def.key === 'filter_ulja') return MOTO_FILTER_BRANDS;
-  if (isMotoType(t) && (def.oil || def.diffOil)) return MOTO_OIL_BRANDS;
+  if (isMotoType(t) && (def.oil || def.diffOil || def.gearOil)) return MOTO_OIL_BRANDS;
   if (def.shockOil) return SHOCK_OIL_BRANDS;
   return def.brands || [];
 }
@@ -556,6 +557,7 @@ function partLabel(p) {
     return p.name + (g ? ' ' + g : '');
   }
   if (p.key === 'gusjenice_kotaci' && p.kind) return p.kind === 'Kotači' ? 'Izmjena kotača' : 'Izmjena gusjenica';
+  if (p.key === 'ulje_mjenjaca' && p.kind) return 'Ulje mjenjača ' + p.kind;
   if (p.key === 'ulje_amortizera') {
     const pos = p.kind || '';
     const g = p.grade === 'Drugo' ? (p.gradeOther || '') : (p.grade || '');
@@ -1287,12 +1289,16 @@ function partRow(p, i, custom) {
     if (def.shockOil) {
       h += `<div><span class="flabel">Što se mijenja</span><div class="chips">${['Prednja vilica', 'Zadnji amortizer'].map(k => `<button type="button" class="chipx ${p.kind === k ? 'on' : ''}" data-a="partKind" data-i="${i}" data-v="${k}">${k}</button>`).join('')}</div></div>`;
     }
+    if (def.gearOil && isCar(t)) {
+      h += `<div><span class="flabel">Vrsta mjenjača</span><div class="chips">${['Manual', 'Automatik'].map(k => `<button type="button" class="chipx ${p.kind === k ? 'on' : ''}" data-a="partKind" data-i="${i}" data-v="${k}">${k}</button>`).join('')}</div></div>`;
+    }
     const freeBrand = brandIsFreeText(def, t);
     const brands = partBrands(def, t);
     const brandField = freeBrand
       ? inp(base + 'brand', p.brand, 'placeholder="npr. Motul ili INA"')
       : `<select class="inp" data-f="${base}brand" data-rr="1"><option value="">Odaberi marku</option>${brands.map(b => `<option ${p.brand === b ? 'selected' : ''}>${b}</option>`).join('')}<option value="Drugo" ${p.brand === 'Drugo' ? 'selected' : ''}>Drugo…</option></select>`;
     const needsGrade = def.oil || def.hydOil || def.diffOil || def.shockOil;
+    const needsLiters = needsGrade || def.gearOil;
     if (needsGrade) {
       const grades = partGrades(def, t);
       const gradeSel = `<select class="inp" data-f="${base}grade" data-rr="1"><option value="">Odaberi</option>${grades.map(g => `<option ${p.grade === g ? 'selected' : ''}>${g}</option>`).join('')}${partGradeOther(def, t) ? `<option value="Drugo" ${p.grade === 'Drugo' ? 'selected' : ''}>Drugo…</option>` : ''}</select>`;
@@ -1300,10 +1306,10 @@ function partRow(p, i, custom) {
     } else h += field('Marka', brandField);
     if (!freeBrand && p.brand === 'Drugo') h += field('Upiši marku', inp(base + 'brandOther', p.brandOther, 'placeholder="Marka"'));
     if (p.grade === 'Drugo') h += field('Upiši gradaciju', inp(base + 'gradeOther', p.gradeOther, 'placeholder="Gradacija"'));
-    if (needsGrade) {
-      const std = def.shockOil ? ['100', '200', '400', '500'] : (def.diffOil ? ['0,5', '1', '2', '5'] : (def.hydOil ? ['5', '10', '20'] : ['1', '4', '5']));
+    if (needsLiters) {
+      const std = def.shockOil ? ['100', '200', '400', '500'] : ((def.diffOil || def.gearOil) ? ['0,5', '1', '2', '5'] : (def.hydOil ? ['5', '10', '20'] : ['1', '4', '5']));
       const unit = def.shockOil ? 'ml' : 'L';
-      const qtyLabel = def.shockOil ? 'Količina (ml)' : (def.diffOil ? 'Količina (L)' : 'Litraža');
+      const qtyLabel = def.shockOil ? 'Količina (ml)' : ((def.diffOil || def.gearOil) ? 'Količina (L)' : 'Litraža');
       if (!def.shockOil) h += field('Naziv ulja', inp(base + 'spec', p.spec, 'placeholder="' + esc(def.spec) + '"'));
       h += `<div><span class="flabel">${qtyLabel}</span><div class="chips">${std.map(l => `<button class="chipx ${String(p.liters) === l ? 'on' : ''}" data-a="liters" data-i="${i}" data-v="${l}">${l} ${unit}</button>`).join('')}<input class="inp" style="width:104px;min-height:34px;padding:5px 9px;font-size:14px" data-f="${base}liters" value="${std.includes(String(p.liters)) ? '' : esc(p.liters)}" inputmode="decimal" placeholder="Drugo (${unit})"></div></div>`;
     } else h += field(def.spec.split(' (')[0], inp(base + 'spec', p.spec, 'placeholder="' + esc(def.spec.includes('(') ? def.spec.split('(')[1].replace(')', '') : '') + '"'));
