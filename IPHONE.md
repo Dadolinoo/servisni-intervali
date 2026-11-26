@@ -1,6 +1,6 @@
 # Servisni Intervali – upute za iPhone (PWA)
 
-Verzija: **1.5.5** · cache: **si-v20**
+Verzija: **1.6.0** · cache: **si-v21**
 
 Aplikacija se ne instalira iz App Storea. Na iPhoneu je otvaraš u Safariju i
 dodaješ na početni zaslon („Dodaj na početni zaslon”). Radi offline, u
@@ -46,9 +46,15 @@ nestajuću obavijest na sredini ekrana 7 dana prije roka zamjene (15.11.
 zimske, 15.04. ljetne) i do 14 dana nakon roka, sve češće kako se rok
 bliži. **Podsjeti me kasnije** odgađa je; **Gume zamijenjene** gasi
 podsjetnike za tu sezonu. Ako u iPhoneu odobriš obavijesti, ista poruka
-može doći i kao sustavna obavijest dok je aplikacija otvorena. Prave
-pozadinske push obavijesti kad je aplikacija zatvorena na iOS-u zahtijevaju
-poslužitelj i nisu uključene.
+može doći i kao sustavna obavijest dok je aplikacija otvorena.
+
+## Push obavijesti (od 1.6.0)
+
+Ako je aplikacija dodana na početni zaslon (iOS 16.4 ili noviji), u
+**Postavke → Obavijesti** možeš uključiti push obavijesti za zamjenu guma
+i istek registracije. One stižu i kad je aplikacija zatvorena. Na iPhoneu
+to radi samo iz ikone na početnom zaslonu, ne iz običnog Safari prozora.
+Postojeći podsjetnik za gume u sredini ekrana ostaje nepromijenjen.
 
 ---
 
@@ -82,7 +88,7 @@ Fotografija zimske gume (`img/tire-winter.jpg`): **HopsonRoad**,
 Povećaj **isti** broj na tri mjesta:
 
 - `window.APP_VERSION` u `index.html` (i u `tools/template.html`)
-- `VERSION` i `CACHE` u `sw.js` (npr. `'1.5.5'` / `'si-v20'`)
-- `version.json` (`{ "version": "1.5.5", "cache": "si-v20" }`)
+- `VERSION` i `CACHE` u `sw.js` (npr. `'1.6.0'` / `'si-v21'`)
+- `version.json` (`{ "version": "1.6.0", "cache": "si-v21" }`)
 
 Zatim slijedi `tools/PUBLISH.md`.

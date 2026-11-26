@@ -1,7 +1,7 @@
 // Servisni Intervali – service worker
 // Za novu verziju: povećaj VERSION i CACHE (npr. '1.5.5' / 'si-v20') te isto u index.html (APP_VERSION) i version.json.
-const VERSION = '1.5.5';
-const CACHE = 'si-v20';
+const VERSION = '1.6.0';
+const CACHE = 'si-v21';
 const RUNTIME = CACHE + '-runtime';
 
 const PRECACHE = [
@@ -73,6 +73,24 @@ self.addEventListener('activate', (event) => {
   })());
 });
 
+
+
+self.addEventListener('push', (event) => {
+  let data = {};
+  try { data = event.data ? event.data.json() : {}; } catch (e) {
+    try { data = { body: event.data && event.data.text() }; } catch (e2) {}
+  }
+  const title = data.title || 'Servisni Intervali';
+  const opts = {
+    body: data.body || '',
+    icon: './icon-192.png',
+    badge: './icon-192.png',
+    tag: data.tag || 'si-push',
+    renotify: !!data.renotify,
+    data: data
+  };
+  event.waitUntil(self.registration.showNotification(title, opts));
+});
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();

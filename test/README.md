@@ -1,9 +1,5 @@
-# Servisni Intervali — testna verzija 1.5.6-test
+# Servisni Intervali — /test/
 
-Ovo nije live verzija. Live ostaje na:
-https://dadolinoo.github.io/servisni-intervali/
+Ova putanja je usklađena s live verzijom **1.6.0**.
 
-Testiraj ovdje:
-https://dadolinoo.github.io/servisni-intervali/test/
-
-Na iPhoneu (iOS 16.4+): Safari → Podijeli → Dodaj na početni zaslon, zatim otvori tu ikonu i u Postavke → Obavijesti uključi obavijesti.
+Live: https://dadolinoo.github.io/servisni-intervali/

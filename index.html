@@ -315,6 +315,13 @@ textarea.inp{min-height:70px}
   .tyre-note.on .tyre-note-card,.tyre-note.out .tyre-note-card{transform:none;transition-duration:.4s}
 }
 
+/* push + remaining days (1.6.0) */
+.days-left{display:inline-block;margin-top:6px;font-size:12px;font-weight:700;padding:5px 10px;border-radius:999px;white-space:nowrap}
+.push-hint{font-size:12px;color:#7c8ba1;padding:0 4px 2px;line-height:1.35;text-align:center}
+.push-ok{font-size:13.5px;color:#93c5fd;text-align:center;padding:10px 12px;font-weight:650}
+.chips-pad{display:flex;gap:6px;flex-wrap:wrap;width:100%;padding:0 0 10px 47px;margin-top:-4px}
+.test-note{font-size:11.5px;color:#7dd3fc;text-align:center;padding:2px 10px 0;font-weight:650}
+
 
   </style>
 </head>
@@ -325,8 +332,8 @@ textarea.inp{min-height:70px}
 <div id="sheet" class="hidden"></div>
 <div id="tyreNote" class="tyre-note" aria-hidden="true"></div>
 <script>
-// ===== Servisni Intervali 1.5.5 =====
-window.APP_VERSION = '1.5.5';
+// ===== Servisni Intervali 1.6.0 =====
+window.APP_VERSION = '1.6.0';
 (function () {
   if (window.__SI_NOW != null || window.__SI_NO_SPLASH) { const s = document.getElementById('splash'); if (s) s.remove(); }
 
@@ -431,7 +438,7 @@ function fmtDate(d) { if (!d) return '—'; const m = String(d).match(/^(\d{4})-
 function fmtMoney(x) { const n = Number(x) || 0; return n.toLocaleString('hr-HR', { minimumFractionDigits: n % 1 ? 2 : 0, maximumFractionDigits: 2 }) + ' €'; }
 function nowDate() { return window.__SI_NOW != null ? new Date(window.__SI_NOW) : new Date(); }
 function startOfDay(d) { const t = new Date(d); t.setHours(0, 0, 0, 0); return t; }
-function daysUntil(s) { if (!s) return 999; const d = new Date(s); const t = startOfDay(nowDate()); return Math.ceil((d - t) / 86400000); }
+function daysUntil(s) { if (!s) return 999; const m = String(s).match(/^(\d{4})-(\d{2})-(\d{2})/); const d = m ? new Date(+m[1], +m[2] - 1, +m[3]) : new Date(s); const t = startOfDay(nowDate()); return Math.round((startOfDay(d) - t) / 86400000); }
 function num(x) { if (x === null || x === undefined || x === '') return NaN; return parseFloat(String(x).replace(',', '.').replace(/[^0-9.\-]/g, '')); }
 function fmtDec(n, d) { return (Math.round(n * Math.pow(10, d)) / Math.pow(10, d)).toString().replace('.', ','); }
 // 2055516 -> 205/55 R16
@@ -683,13 +690,17 @@ function photoOf(v) { return v.photo || defaultPhoto(v.brand, v.model); }
 const S = {
   view: 'home', selId: null, tlakSet: 'summer', unit: lsGet('si_unit', 'bar'),
   vehicles: (lsGet('vehicles', []) || []).map(normalizeVehicle),
-  prefs: Object.assign({ notifTyres: true, notifReg: true }, lsGet('si_prefs', {})),
+  prefs: Object.assign({ notifTyres: true, notifReg: true, pushTyres: true, pushReg: true, pushTyreDays: 7, pushRegDays: [30, 7, 1] }, lsGet('si_prefs', {})),
   lang: localStorage.getItem('lang') || 'hr',
   form: null, editingId: null, sform: null, dform: null, sheet: null, sheetData: {},
   appVersion: window.APP_VERSION, swVersion: '', remoteVersion: '', updateAvailable: false, updateDismissed: false, updateStatus: '', refreshing: false,
   auth: lsGet('si_auth', null), sync: Object.assign({ lastSync: '', dirty: false, state: '' }, lsGet('si_sync', {}))
 };
 function sel() { return S.vehicles.find(v => v.id === S.selId) || null; }
+if (!Array.isArray(S.prefs.pushRegDays) || !S.prefs.pushRegDays.length) S.prefs.pushRegDays = [30, 7, 1];
+S.prefs.pushRegDays = S.prefs.pushRegDays.map(Number).filter(n => [30, 7, 1].includes(n));
+if (![3, 5, 7].includes(Number(S.prefs.pushTyreDays))) S.prefs.pushTyreDays = 7;
+
 
 const IDB_NAME = 'si-blobs', IDB_STORE = 'files';
 function isDataUrl(s) { return typeof s === 'string' && s.slice(0, 5) === 'data:'; }
@@ -804,6 +815,7 @@ async function persistLocal() {
 function persist() {
   S.sync.dirty = true; lsSet('si_sync', S.sync);
   Cloud.schedule();
+  if (typeof schedulePushSync === 'function') schedulePushSync();
   persistChain = persistChain.then(() => persistLocal(), () => persistLocal());
   return persistChain;
 }
@@ -962,7 +974,7 @@ async function checkForUpdate() {
 
 // ---------- Prikazi ----------
 function nav() {
-  const tab = ({ addService: 'services', history: 'services', services: 'services', documents: 'documents', addDocument: 'documents', settings: 'settings' })[S.view] || 'vehicles';
+  const tab = ({ addService: 'services', history: 'services', services: 'services', documents: 'documents', addDocument: 'documents', settings: 'settings', notif: 'settings' })[S.view] || 'vehicles';
   const it = (k, view, icon, label) => `<button class="ni ${tab === k ? 'on' : ''}" data-a="tab" data-v="${view}" aria-label="${label}">${ic(icon, 1.9)}${label}</button>`;
   return `<div class="nav-pill">${it('vehicles', 'home', 'car', 'Vozila')}${it('services', 'services', 'wrench', 'Servisi')}${it('documents', 'documents', 'doc', 'Dokumenti')}${it('settings', 'settings', 'gear', 'Postavke')}</div>`;
 }
@@ -1152,7 +1164,7 @@ function vVehicle() {
   h += `<div class="glass vhero hero-sm"><div class="ph">${vehImg(v)}<span class="chip l">${typeIcon(v.type)} ${esc(v.type || 'Automobil')}</span><span class="chip r">${esc(v.brand)}</span></div><div class="vb"><div class="name">${esc(v.brand + ' ' + v.model)}</div><div class="km">${usageText(v)}</div></div></div>`;
   const pills = [], ns = nextServiceLeft(v);
   if (ns !== null) pills.push(`<span class="pill-status ${ns <= 1000 ? 'pill-amber' : ''}">${ns > 0 ? 'Servis za ' + fmtNum(ns) + ' km' : 'Servis kasni ' + fmtNum(-ns) + ' km'}</span>`);
-  [['registrationDate', 'Registracija do'], ['insuranceDate', 'Osiguranje do']].forEach(([k, t]) => { if (v[k]) { const n = daysUntil(v[k]); pills.push(`<span class="pill-status ${n < 0 ? 'pill-red' : n <= 30 ? 'pill-amber' : ''}">${t} ${fmtDate(v[k])}</span>`); } });
+  [['registrationDate', 'Registracija do'], ['insuranceDate', 'Osiguranje do']].forEach(([k, t]) => { if (v[k]) { const n = daysUntil(v[k]); pills.push(`<span class="pill-status ${n < 0 ? 'pill-red' : n <= 30 ? 'pill-amber' : ''}">${t} ${fmtDate(v[k])} · ${daysLeftLabel(n)}</span>`); } });
   if (pills.length) h += `<div class="pills">${pills.join('')}</div>`;
   const row = (icon, k, val, cls) => `<div class="ir"><div class="ic">${ic(icon)}</div><div style="flex:1;min-width:0"><div class="ik">${k}</div><div class="iv ${cls || ''}">${val}</div></div></div>`;
   h += `<div class="glass info-list">` + row('gauge', 'Kilometraža', fmtNum(v.mileage) + ' km', 'blue');
@@ -1238,6 +1250,18 @@ function layoutTlak() {
 
 // ---------- Forme ----------
 function field(label, inner, hint) { return `<div class="field"><label>${label}</label>${inner}${hint ? `<div class="hint">${hint}</div>` : ''}</div>`; }
+function daysLeftLabel(n) {
+  if (n < 0) { const a = -n; return a === 1 ? 'Istekla jučer' : 'Istekla prije ' + a + ' dana'; }
+  if (n === 0) return 'Ističe danas';
+  if (n === 1) return 'Još 1 dan';
+  return 'Još ' + n + ' dana';
+}
+function dateFieldWithDays(label, path, val) {
+  const n = daysUntil(val);
+  const pill = val ? `<span class="days-left pill-status ${n < 0 ? 'pill-red' : n <= 30 ? 'pill-amber' : ''}">${daysLeftLabel(n)}</span>` : '';
+  return field(label, inp(path, val, 'type="date" data-rr="1"') + pill);
+}
+
 function inp(path, val, attrs) { return `<input class="inp" data-f="${path}" value="${esc(val)}" ${attrs || ''}>`; }
 function vAddVehicle() {
   const f = S.form, back = S.editingId ? 'backVehicle' : (S.pendingNewService ? 'cancelPendingService' : 'home');
@@ -1251,7 +1275,7 @@ function vAddVehicle() {
     ${f.type === 'Motocikl' ? `<div><span class="flabel">Vrsta motocikla</span><div class="chips">${MOTO_KINDS.map(k => `<button type="button" class="chipx ${f.motoKind === k ? 'on' : ''}" data-a="motoKind" data-v="${k}">${k}</button>`).join('')}</div></div>` : ''}
     <div class="grid2">${field('Kilometraža (km)', inp('form.mileage', f.mileage, 'inputmode="numeric" placeholder="npr. 121000"'))}${isCar(f.type) ? field('Servisni interval (km)', inp('form.serviceInterval', f.serviceInterval, 'inputmode="numeric" placeholder="npr. 15000"')) : field('Radni sati (h)', inp('form.workHours', f.workHours, 'inputmode="decimal"'))}</div>
   </div>`;
-  h += `<div class="glass form-card"><h3>${ic('cal')} Datumi</h3><div class="grid2">${field('Registracija vrijedi do', inp('form.registrationDate', f.registrationDate, 'type="date"'))}${field('Osiguranje vrijedi do', inp('form.insuranceDate', f.insuranceDate, 'type="date"'))}</div></div>`;
+  h += `<div class="glass form-card"><h3>${ic('cal')} Datumi</h3><div class="grid2">${dateFieldWithDays('Registracija vrijedi do', 'form.registrationDate', f.registrationDate)}${dateFieldWithDays('Osiguranje vrijedi do', 'form.insuranceDate', f.insuranceDate)}</div></div>`;
   ['summer', 'winter'].forEach(set => {
     const t = f.tires[set], m = tyreSetMeta(f, set), axle = usesAxleTires(f.type), p = 'form.tires.' + set + '.';
     const dimPh = axle ? 'placeholder="npr. 1207017"' : 'placeholder="npr. 2055516"';
@@ -1476,8 +1500,7 @@ function vSettings() {
   h += row('downloadBackup', 'dl', 'Preuzmi backup', '<span>JSON datoteka na uređaj</span>', chev);
   h += `<div class="set-row"><div class="set-ico">${ic('ul')}</div><div class="set-body"><b>Vrati backup</b><span>Učitaj spremljenu datoteku</span></div>${chev}<input type="file" accept="application/json,.json" data-a="restore" aria-label="Vrati backup"></div>`;
   h += `</div><div class="glass set-card">`;
-  h += row('pref', 'bell', 'Obavijesti – gume', '<span>7 dana prije roka, u sredini ekrana</span>', `<span class="tog ${S.prefs.notifTyres ? 'on' : ''}"></span>`, 'data-v="notifTyres"');
-  h += row('pref', 'cal', 'Obavijesti – registracija', '<span>30 dana prije isteka</span>', `<span class="tog ${S.prefs.notifReg ? 'on' : ''}"></span>`, 'data-v="notifReg"');
+  h += row('goNotif', 'bell', 'Obavijesti', '<span>Gume i registracija · push na zaključani zaslon</span>', chev);
   h += `</div><div class="glass set-card">`;
   h += row('', 'pen', 'Verzija', `<span>${esc(S.appVersion)}${S.remoteVersion && S.remoteVersion !== S.appVersion ? ' · na serveru ' + esc(S.remoteVersion) : ''}</span>`, '');
   h += row('checkUpdate', 'refresh', 'Provjeri ažuriranje', `<span>${esc(S.updateStatus || (S.updateAvailable ? 'Dostupna je nova verzija ' + S.remoteVersion : 'Aplikacija je ažurna'))}</span>`, chev);
@@ -1549,7 +1572,140 @@ function toast(t, ms) {
 }
 
 // ---------- Render ----------
-const VIEWS = { home: vHome, vehicle: vVehicle, tlak: vTlak, addVehicle: vAddVehicle, addService: vAddService, history: vHistory, services: vServices, documents: vDocuments, addDocument: vAddDocument, settings: vSettings };
+
+// ---------- Push obavijesti (1.6.0) ----------
+const VAPID_PUBLIC = 'BGx_VhOZOYFiKmxQ62G_rQk0kN9MpmXeLPIIJFwFav9Tqeevze2rR2kDCPiLfuAfmDDwMDx0oO3CsDKp2fuevZ8';
+const PUSH_API = 'https://si-push-test.dhlogix.workers.dev';
+function urlBase64ToUint8Array(b64) {
+  const pad = '='.repeat((4 - (b64.length % 4)) % 4);
+  const raw = atob((b64 + pad).replace(/-/g, '+').replace(/_/g, '/'));
+  const out = new Uint8Array(raw.length);
+  for (let i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
+  return out;
+}
+function isStandalonePwa() {
+  return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+}
+function isIosDevice() {
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+}
+function pushPerm() { return ('Notification' in window) ? Notification.permission : 'denied'; }
+function hasPushSub() { return !!lsGet('si_push_sub', null); }
+function vehicleName(v) { return ((v.brand || '') + ' ' + (v.model || '')).trim() || 'Vozilo'; }
+function pushSnapshot() {
+  return {
+    prefs: {
+      pushTyres: !!S.prefs.pushTyres,
+      pushReg: !!S.prefs.pushReg,
+      pushTyreDays: Number(S.prefs.pushTyreDays) || 7,
+      pushRegDays: Array.isArray(S.prefs.pushRegDays) ? S.prefs.pushRegDays : [30, 7, 1]
+    },
+    vehicles: (S.vehicles || []).map(v => ({
+      id: String(v.id),
+      name: vehicleName(v),
+      registrationDate: v.registrationDate || '',
+      axleTires: !!usesAxleTires(v.type)
+    })),
+    tz: 'Europe/Zagreb'
+  };
+}
+async function syncPush(force) {
+  const sub = lsGet('si_push_sub', null);
+  if (!sub || !sub.endpoint) return;
+  if (!force && !S.prefs.pushTyres && !S.prefs.pushReg) { /* still sync so server knows toggles */ }
+  try {
+    const res = await fetch(PUSH_API + '/subscribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ subscription: sub, ...pushSnapshot() })
+    });
+    if (!res.ok) throw new Error('sync ' + res.status);
+  } catch (e) { console.warn('push sync', e); }
+}
+function schedulePushSync() {
+  clearTimeout(schedulePushSync.t);
+  schedulePushSync.t = setTimeout(() => syncPush().catch(() => {}), 1200);
+}
+async function enablePush() {
+  if (!('Notification' in window) || !('serviceWorker' in navigator) || !('PushManager' in window)) {
+    S.pushMsg = 'Ovaj preglednik ne podržava push obavijesti.';
+    render(); return;
+  }
+  if (isIosDevice() && !isStandalonePwa()) {
+    S.pushMsg = 'Na iPhoneu prvo dodaj aplikaciju na početni zaslon (Safari → Podijeli → Dodaj na početni zaslon), zatim ovdje uključi obavijesti. Potreban je iOS 16.4 ili noviji.';
+    render(); return;
+  }
+  let perm;
+  try { perm = await Notification.requestPermission(); } catch (e) { perm = Notification.permission; }
+  if (perm !== 'granted') {
+    S.pushMsg = perm === 'denied'
+      ? 'Dozvola je odbijena. Uključi je u postavkama sustava za ovu aplikaciju.'
+      : 'Dozvola nije dana.';
+    render(); return;
+  }
+  try {
+    const reg = window.__swReg || await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC)
+    });
+    lsSet('si_push_sub', sub.toJSON());
+    await syncPush(true);
+    S.pushMsg = 'ok';
+  } catch (e) {
+    console.warn(e);
+    S.pushMsg = 'Neuspjelo uključivanje. Pokušaj ponovno.';
+  }
+  render();
+}
+async function sendTestPush() {
+  const sub = lsGet('si_push_sub', null);
+  if (!sub) { S.pushMsg = 'Prvo uključi obavijesti.'; render(); return; }
+  try {
+    const res = await fetch(PUSH_API + '/test', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ subscription: sub, name: (S.vehicles[0] && vehicleName(S.vehicles[0])) || 'Tiguan' })
+    });
+    if (!res.ok) throw new Error(String(res.status));
+    S.pushMsg = 'test-sent';
+  } catch (e) {
+    S.pushMsg = 'Testna obavijest nije poslana. Provjeri vezu i pokušaj ponovno.';
+  }
+  render();
+}
+function vNotif() {
+  const granted = pushPerm() === 'granted' && hasPushSub();
+  const tyreOn = !!S.prefs.pushTyres, regOn = !!S.prefs.pushReg;
+  const tyreDay = Number(S.prefs.pushTyreDays) || 7;
+  const regDays = Array.isArray(S.prefs.pushRegDays) ? S.prefs.pushRegDays : [30, 7, 1];
+  const chip = (act, val, label, on) => `<button type="button" class="chipx ${on ? 'on' : ''}" data-a="${act}" data-v="${val}">${label}</button>`;
+  let h = topbar('Postavke', null, 'goSettings') + titleRow('bell', 'Obavijesti');
+  h += `<div class="title-sub">Push obavijesti na zaključani zaslon. Podsjetnik za gume u sredini ekrana ostaje nepromijenjen.</div>`;
+  if (granted) {
+    h += `<div class="glass push-ok">Obavijesti su uključene.</div>`;
+  } else {
+    h += `<button class="btn btn-primary" data-a="enablePush">${ic('bell')} Uključi obavijesti</button>`;
+    const hint = S.pushMsg && S.pushMsg !== 'ok' && S.pushMsg !== 'test-sent' ? S.pushMsg
+      : (isIosDevice() && !isStandalonePwa()
+        ? 'Na iPhoneu prvo dodaj aplikaciju na početni zaslon, zatim uključi obavijesti (iOS 16.4+).'
+        : 'Preglednik će zatražiti dozvolu pri prvom uključivanju.');
+    h += `<div class="push-hint">${esc(hint)}</div>`;
+  }
+  if (S.pushMsg === 'test-sent') h += `<div class="push-hint">Testna obavijest je poslana. Ako se ne vidi, provjeri dozvolu u postavkama sustava.</div>`;
+  h += `<div class="glass set-card">`;
+  h += `<button class="set-row" data-a="pref" data-v="pushTyres"><div class="set-ico">${ic('tyre')}</div><div class="set-body"><b>Gume</b><span>Podsjetnik nekoliko dana prije sezonske zamjene</span></div><span class="tog ${tyreOn ? 'on' : ''}"></span></button>`;
+  h += `<div class="chips chips-pad">${chip('pushTyreDays', 3, '3 dana', tyreDay === 3)}${chip('pushTyreDays', 5, '5 dana', tyreDay === 5)}${chip('pushTyreDays', 7, '7 dana', tyreDay === 7)}</div>`;
+  h += `</div>`;
+  h += `<div class="glass set-card">`;
+  h += `<button class="set-row" data-a="pref" data-v="pushReg"><div class="set-ico">${ic('cal')}</div><div class="set-body"><b>Registracija</b><span>Istek registracije za svako vozilo</span></div><span class="tog ${regOn ? 'on' : ''}"></span></button>`;
+  h += `<div class="chips chips-pad">${chip('pushRegDays', 30, '30 dana', regDays.includes(30))}${chip('pushRegDays', 7, '7 dana', regDays.includes(7))}${chip('pushRegDays', 1, '1 dan', regDays.includes(1))}</div>`;
+  h += `</div>`;
+  if (granted) h += `<button class="btn btn-ghost" data-a="testPush" style="margin-top:2px">Pošalji testnu obavijest</button>`;
+  return h;
+}
+
+const VIEWS = { home: vHome, vehicle: vVehicle, tlak: vTlak, addVehicle: vAddVehicle, addService: vAddService, history: vHistory, services: vServices, documents: vDocuments, addDocument: vAddDocument, settings: vSettings, notif: vNotif };
 function render() {
   const view = document.getElementById('view');
   view.className = S.view === 'tlak' ? 'fit' : '';
@@ -1728,7 +1884,19 @@ document.addEventListener('click', async (ev) => {
     case 'sheet': S.sheet = v; S.sheetData = {}; render(); break;
     case 'closeSheet': S.sheet = null; render(); break;
     case 'setLang': S.lang = v; localStorage.setItem('lang', v); S.sheet = null; render(); break;
-    case 'pref': S.prefs[v] = !S.prefs[v]; lsSet('si_prefs', S.prefs); persist(); render(); if (v === 'notifTyres' && S.prefs.notifTyres) requestTyreNotifPerm(); break;
+    case 'pref': S.prefs[v] = !S.prefs[v]; lsSet('si_prefs', S.prefs); persist(); render(); if (v === 'notifTyres' && S.prefs.notifTyres) requestTyreNotifPerm(); if (v === 'pushTyres' || v === 'pushReg') schedulePushSync(); break;
+    case 'goNotif': go('notif'); break;
+    case 'goSettings': go('settings'); break;
+    case 'pushTyreDays': S.prefs.pushTyreDays = Number(v) || 7; lsSet('si_prefs', S.prefs); persist(); schedulePushSync(); render(); break;
+    case 'pushRegDays': {
+      const n = Number(v); let arr = Array.isArray(S.prefs.pushRegDays) ? S.prefs.pushRegDays.slice() : [30, 7, 1];
+      if (arr.includes(n)) { if (arr.length > 1) arr = arr.filter(x => x !== n); }
+      else arr.push(n);
+      S.prefs.pushRegDays = [30, 7, 1].filter(x => arr.includes(x));
+      lsSet('si_prefs', S.prefs); persist(); schedulePushSync(); render(); break;
+    }
+    case 'enablePush': await enablePush(); break;
+    case 'testPush': await sendTestPush(); break;
     case 'tyreSnooze': hideTyrePopup('snooze'); break;
     case 'tyreDone': tyreMarkDone(); break;
     case 'checkUpdate': checkForUpdate(); break;

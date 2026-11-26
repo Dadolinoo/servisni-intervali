@@ -315,7 +315,7 @@ textarea.inp{min-height:70px}
   .tyre-note.on .tyre-note-card,.tyre-note.out .tyre-note-card{transform:none;transition-duration:.4s}
 }
 
-/* push + remaining days (1.5.6-test) */
+/* push + remaining days (1.6.0) */
 .days-left{display:inline-block;margin-top:6px;font-size:12px;font-weight:700;padding:5px 10px;border-radius:999px;white-space:nowrap}
 .push-hint{font-size:12px;color:#7c8ba1;padding:0 4px 2px;line-height:1.35;text-align:center}
 .push-ok{font-size:13.5px;color:#93c5fd;text-align:center;padding:10px 12px;font-weight:650}
@@ -332,8 +332,8 @@ textarea.inp{min-height:70px}
 <div id="sheet" class="hidden"></div>
 <div id="tyreNote" class="tyre-note" aria-hidden="true"></div>
 <script>
-// ===== Servisni Intervali 1.5.6-test =====
-window.APP_VERSION = '1.5.6-test';
+// ===== Servisni Intervali 1.6.0 =====
+window.APP_VERSION = '1.6.0';
 (function () {
   if (window.__SI_NOW != null || window.__SI_NO_SPLASH) { const s = document.getElementById('splash'); if (s) s.remove(); }
 
@@ -1573,7 +1573,7 @@ function toast(t, ms) {
 
 // ---------- Render ----------
 
-// ---------- Push obavijesti (1.5.6-test) ----------
+// ---------- Push obavijesti (1.6.0) ----------
 const VAPID_PUBLIC = 'BGx_VhOZOYFiKmxQ62G_rQk0kN9MpmXeLPIIJFwFav9Tqeevze2rR2kDCPiLfuAfmDDwMDx0oO3CsDKp2fuevZ8';
 const PUSH_API = 'https://si-push-test.dhlogix.workers.dev';
 function urlBase64ToUint8Array(b64) {
@@ -1682,7 +1682,6 @@ function vNotif() {
   const chip = (act, val, label, on) => `<button type="button" class="chipx ${on ? 'on' : ''}" data-a="${act}" data-v="${val}">${label}</button>`;
   let h = topbar('Postavke', null, 'goSettings') + titleRow('bell', 'Obavijesti');
   h += `<div class="title-sub">Push obavijesti na zaključani zaslon. Podsjetnik za gume u sredini ekrana ostaje nepromijenjen.</div>`;
-  h += `<div class="test-note">Testna verzija 1.5.6-test — nije live</div>`;
   if (granted) {
     h += `<div class="glass push-ok">Obavijesti su uključene.</div>`;
   } else {
@@ -1690,7 +1689,7 @@ function vNotif() {
     const hint = S.pushMsg && S.pushMsg !== 'ok' && S.pushMsg !== 'test-sent' ? S.pushMsg
       : (isIosDevice() && !isStandalonePwa()
         ? 'Na iPhoneu prvo dodaj aplikaciju na početni zaslon, zatim uključi obavijesti (iOS 16.4+).'
-        : 'iOS traži dozvolu pri prvom uključivanju.');
+        : 'Preglednik će zatražiti dozvolu pri prvom uključivanju.');
     h += `<div class="push-hint">${esc(hint)}</div>`;
   }
   if (S.pushMsg === 'test-sent') h += `<div class="push-hint">Testna obavijest je poslana. Ako se ne vidi, provjeri dozvolu u postavkama sustava.</div>`;
