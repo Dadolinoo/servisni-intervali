@@ -1,7 +1,7 @@
 // Servisni Intervali – service worker
 // Za novu verziju: povećaj VERSION i CACHE (npr. '1.5.5' / 'si-v20') te isto u index.html (APP_VERSION) i version.json.
-const VERSION = '1.6.0';
-const CACHE = 'si-v21';
+const VERSION = '1.6.1';
+const CACHE = 'si-v22';
 const RUNTIME = CACHE + '-runtime';
 
 const PRECACHE = [
@@ -27,7 +27,12 @@ const PRECACHE = [
   './img/top-hatchback.png',
   './img/top-karavan.png',
   './img/top-kupe.png',
-  './img/top-kombi.png'
+  './img/top-kombi.png',
+  './img/type-automobil.webp',
+  './img/type-bager.webp',
+  './img/type-traktor.webp',
+  './img/type-atv.webp',
+  './img/type-motocikl.webp'
 ];
 
 // Vanjski resursi koji se keširaju kad se uspješno dohvate

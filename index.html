@@ -161,9 +161,15 @@ input[type=date].inp{min-height:42px}
 textarea.inp{min-height:70px}
 .hint{font-size:11.5px;color:#7c8ba1;margin-top:3px}
 .types{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
-.types button{padding:9px 2px;border-radius:12px;border:1px solid rgba(125,211,252,.18);background:rgba(7,21,37,.45);display:flex;flex-direction:column;align-items:center;gap:3px;font-size:12px;font-weight:650;color:#cbd5e1}
-.types button span{font-size:22px}
-.types button.on{background:rgba(59,130,246,.22);border-color:rgba(96,165,250,.6);color:#fff;box-shadow:0 0 10px rgba(59,130,246,.3)}
+.types button{padding:8px 4px 7px;border-radius:12px;border:1px solid rgba(125,211,252,.38);background:rgba(7,21,37,.55);display:flex;flex-direction:column;align-items:center;gap:4px;font-size:12px;font-weight:650;color:#fff}
+.types button span{width:100%;height:52px;display:grid;place-items:center}
+.types button.on{background:rgba(59,130,246,.22);border-color:rgba(186,230,253,.85);color:#fff;box-shadow:0 0 0 1px rgba(186,230,253,.4),0 0 14px rgba(56,189,248,.5)}
+img.type-ico{display:block;object-fit:contain;filter:drop-shadow(0 3px 5px rgba(0,0,0,.5));pointer-events:none}
+.types button img.type-ico{max-width:100%;max-height:50px;width:auto;height:auto}
+.vhero .ph .emoji img.type-ico{max-width:72%;max-height:72%;width:auto;height:auto}
+.vsmall .thumb img.type-ico,.sghead .thumb img.type-ico{width:auto;height:auto;max-width:86%;max-height:78%;object-fit:contain}
+.chip img.type-ico,.scard .sv img.type-ico{width:16px;height:16px;display:inline-block;vertical-align:-3px;margin-right:3px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.45))}
+.set-ico img.type-ico{width:28px;height:28px}
 .chips{display:flex;gap:6px;flex-wrap:wrap}
 .chipx{font-size:13px;font-weight:650;padding:6px 11px;border-radius:999px;background:rgba(255,255,255,.04);border:1px solid rgba(148,163,184,.2);color:#cbd5e1}
 .chipx.on{background:rgba(59,130,246,.22);border-color:rgba(96,165,250,.55);color:#bfdbfe;box-shadow:0 0 8px rgba(59,130,246,.25)}
@@ -315,7 +321,7 @@ textarea.inp{min-height:70px}
   .tyre-note.on .tyre-note-card,.tyre-note.out .tyre-note-card{transform:none;transition-duration:.4s}
 }
 
-/* push + remaining days (1.6.0) */
+/* push + remaining days (1.6.1) */
 .days-left{display:inline-block;margin-top:6px;font-size:12px;font-weight:700;padding:5px 10px;border-radius:999px;white-space:nowrap}
 .push-hint{font-size:12px;color:#7c8ba1;padding:0 4px 2px;line-height:1.35;text-align:center}
 .push-ok{font-size:13.5px;color:#93c5fd;text-align:center;padding:10px 12px;font-weight:650}
@@ -332,8 +338,8 @@ textarea.inp{min-height:70px}
 <div id="sheet" class="hidden"></div>
 <div id="tyreNote" class="tyre-note" aria-hidden="true"></div>
 <script>
-// ===== Servisni Intervali 1.6.0 =====
-window.APP_VERSION = '1.6.0';
+// ===== Servisni Intervali 1.6.1 =====
+window.APP_VERSION = '1.6.1';
 (function () {
   if (window.__SI_NOW != null || window.__SI_NO_SPLASH) { const s = document.getElementById('splash'); if (s) s.remove(); }
 
@@ -644,8 +650,9 @@ function bumpVehicleFromServices(v) {
   const maxKm = (v.services || []).reduce((m, s) => Math.max(m, Number(s.mileage) || 0), 0);
   if (maxKm > (Number(v.mileage) || 0)) v.mileage = maxKm;
 }
-const TYPES = [{ value: 'Automobil', icon: '🚗' }, { value: 'Bager', icon: '🏗️' }, { value: 'Traktor', icon: '🚜' }, { value: 'ATV', icon: '🚙' }, { value: 'Motocikl', icon: '🏍️' }];
-function typeIcon(t) { const x = TYPES.find(y => y.value === (t || 'Automobil')); return x ? x.icon : '🚗'; }
+const TYPES = ['Automobil', 'Bager', 'Traktor', 'ATV', 'Motocikl'];
+const TYPE_IMG = { Automobil: 'img/type-automobil.webp', Bager: 'img/type-bager.webp', Traktor: 'img/type-traktor.webp', ATV: 'img/type-atv.webp', Motocikl: 'img/type-motocikl.webp' };
+function typeIcon(t) { const src = TYPE_IMG[t || 'Automobil'] || TYPE_IMG.Automobil; return '<img class="type-ico" src="' + src + '" alt="" draggable="false">'; }
 
 function normalizeVehicle(v) {
   v = v || {};
@@ -1267,7 +1274,7 @@ function vAddVehicle() {
   const f = S.form, back = S.editingId ? 'backVehicle' : (S.pendingNewService ? 'cancelPendingService' : 'home');
   let h = topbar('Natrag', null, back) + titleRow(S.editingId ? 'pen' : 'plus', S.editingId ? 'Uredi vozilo' : 'Novo vozilo');
   h += `<div class="glass form-card"><h3>${ic('car')} Osnovni podaci</h3>
-    <div><span class="flabel">Tip vozila</span><div class="types">${TYPES.map(t => `<button class="${f.type === t.value ? 'on' : ''}" data-a="ftype" data-v="${t.value}"><span>${t.icon}</span>${t.value}</button>`).join('')}</div></div>
+    <div><span class="flabel">Tip vozila</span><div class="types">${TYPES.map(t => `<button class="${f.type === t ? 'on' : ''}" data-a="ftype" data-v="${t}"><span>${typeIcon(t)}</span>${t}</button>`).join('')}</div></div>
     <div class="grid2">${field('Marka', inp('form.brand', f.brand, 'placeholder="npr. Volkswagen" autocomplete="off"'))}${field('Model', inp('form.model', f.model, 'placeholder="npr. Tiguan R-line" autocomplete="off"'))}</div>
     <div class="grid2">${field('Godište', inp('form.year', f.year, 'inputmode="numeric" placeholder="npr. 2020"'))}${field('Registracijska oznaka', inp('form.plate', f.plate, 'placeholder="npr. ZG 1234-AB" autocapitalize="characters" style="text-transform:uppercase"'))}</div>
     ${field(isCar(f.type) ? 'Broj šasije (VIN) *' : 'Broj šasije / serijski broj', `<input class="inp mono" data-f="form.vin" value="${esc(f.vin)}" autocapitalize="characters" placeholder="17 znakova">`)}
@@ -1573,7 +1580,7 @@ function toast(t, ms) {
 
 // ---------- Render ----------
 
-// ---------- Push obavijesti (1.6.0) ----------
+// ---------- Push obavijesti (1.6.1) ----------
 const VAPID_PUBLIC = 'BGx_VhOZOYFiKmxQ62G_rQk0kN9MpmXeLPIIJFwFav9Tqeevze2rR2kDCPiLfuAfmDDwMDx0oO3CsDKp2fuevZ8';
 const PUSH_API = 'https://si-push-test.dhlogix.workers.dev';
 function urlBase64ToUint8Array(b64) {
