@@ -338,8 +338,8 @@ img.type-ico{display:block;object-fit:contain;filter:drop-shadow(0 3px 5px rgba(
 <div id="sheet" class="hidden"></div>
 <div id="tyreNote" class="tyre-note" aria-hidden="true"></div>
 <script>
-// ===== Servisni Intervali 1.6.2 =====
-window.APP_VERSION = '1.6.2';
+// ===== Servisni Intervali 1.6.3 =====
+window.APP_VERSION = '1.6.3';
 (function () {
   if (window.__SI_NOW != null || window.__SI_NO_SPLASH) { const s = document.getElementById('splash'); if (s) s.remove(); }
 
@@ -1116,13 +1116,22 @@ function showTyrePopup() {
     card.addEventListener('pointerdown', () => clearTimeout(tyreNoteTimer));
     card.addEventListener('pointerup', arm);
   }
-  fireTyreSystemNotification(info, c.text);
+  // OS notification only when the app is in the background; in-app card covers the foreground.
+}
+function appInForeground() {
+  return typeof document !== 'undefined' && document.visibilityState === 'visible';
 }
 function checkTyreReminder() {
   if (tyreNoteOpen) return;
   if (S.sheet) return;
   if (!shouldShowTyrePopup()) return;
-  showTyrePopup();
+  const info = tyreWindow(); if (!info) return;
+  if (appInForeground()) {
+    showTyrePopup();
+    return;
+  }
+  fireTyreSystemNotification(info, tyreCopy(info).text);
+  markTyreShown();
 }
 function tyreMarkDone() {
   const info = tyreNoteInfo || tyreWindow();
