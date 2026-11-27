@@ -1,5 +1,6 @@
 # Servisni Intervali — /test/
 
-Ova putanja je usklađena s live verzijom **1.6.3**.
+Testna verzija **1.7.0**: prijava u oblak e-mailom i jednokratnim kodom iz pošte.
 
-Live: https://dadolinoo.github.io/servisni-intervali/
+Live (1.6.3): https://dadolinoo.github.io/servisni-intervali/  
+Test: https://dadolinoo.github.io/servisni-intervali/test/

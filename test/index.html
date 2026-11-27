@@ -329,6 +329,20 @@ img.type-ico{display:block;object-fit:contain;filter:drop-shadow(0 3px 5px rgba(
 .test-note{font-size:11.5px;color:#7dd3fc;text-align:center;padding:2px 10px 0;font-weight:650}
 
 
+
+/* 1.7.0 Oblak */
+.pill-ok{background:rgba(34,197,94,.14);border:1px solid rgba(74,222,128,.35);color:#86efac;font-size:12px;font-weight:700;padding:5px 10px;border-radius:999px;display:inline-block}
+.code-row{display:flex;gap:6px;justify-content:center;padding:2px 0 4px}
+.code-cell{width:42px;height:48px;border-radius:11px;background:rgba(7,21,37,.55);border:1px solid rgba(125,211,252,.35);text-align:center;font-size:20px;font-weight:750;color:#fff;outline:none;-webkit-appearance:none;appearance:none;padding:0}
+.code-cell:focus{border-color:rgba(125,211,252,.7);box-shadow:0 0 0 3px rgba(56,189,248,.18)}
+.mail-ok{font-size:12.5px;color:#93c5fd;line-height:1.4;padding:0 2px}
+.ok-banner{padding:16px 14px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:8px}
+.ok-ico{width:52px;height:52px;border-radius:16px;display:grid;place-items:center;background:rgba(34,197,94,.14);border:1px solid rgba(74,222,128,.35);color:#86efac;box-shadow:0 0 16px rgba(34,197,94,.2)}
+.ok-ico svg{width:26px;height:26px}
+.ok-banner b{font-size:16px;font-weight:750;color:#fff}
+.ok-banner span{font-size:12.5px;color:#94a3b8;line-height:1.4}
+.cloud-actions{display:flex;flex-direction:column;gap:8px;margin-top:2px}
+.test-badge{font-size:11px;font-weight:700;color:#7dd3fc;text-align:center;padding:0 8px 2px}
   </style>
 </head>
 <body>
@@ -338,8 +352,8 @@ img.type-ico{display:block;object-fit:contain;filter:drop-shadow(0 3px 5px rgba(
 <div id="sheet" class="hidden"></div>
 <div id="tyreNote" class="tyre-note" aria-hidden="true"></div>
 <script>
-// ===== Servisni Intervali 1.6.3 =====
-window.APP_VERSION = '1.6.3';
+// ===== Servisni Intervali 1.7.0 =====
+window.APP_VERSION = '1.7.0';
 (function () {
   if (window.__SI_NOW != null || window.__SI_NO_SPLASH) { const s = document.getElementById('splash'); if (s) s.remove(); }
 
@@ -396,7 +410,9 @@ const P = {
   warn: '<path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
   tyre: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><path d="M12 3v5M12 16v5M3 12h5M16 12h5"/>',
   user: '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
-  clip: '<path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/>'
+  clip: '<path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/>',
+  mail: '<path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><path d="m22 6-10 7L2 6"/>',
+  check: '<path d="M20 6 9 17l-5-5"/>'
 };
 function ic(n, sw) { return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="' + (sw || 2) + '" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (P[n] || '') + '</svg>'; }
 const TPMS_SVG = '<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M8.2 26.5C4.9 24.4 3 20.9 3 17c0-6.9 5.8-12.5 13-12.5S29 10.1 29 17c0 3.9-1.9 7.4-5.2 9.5"/><path d="M8.2 26.5l1.6-2.3M23.8 26.5l-1.6-2.3"/><path d="M16 10v8.5"/><circle cx="16" cy="23" r="1.3" fill="currentColor" stroke="none"/></svg>';
@@ -697,7 +713,7 @@ function photoOf(v) { return v.photo || defaultPhoto(v.brand, v.model); }
 const S = {
   view: 'home', selId: null, tlakSet: 'summer', unit: lsGet('si_unit', 'bar'),
   vehicles: (lsGet('vehicles', []) || []).map(normalizeVehicle),
-  prefs: Object.assign({ notifTyres: true, notifReg: true, pushTyres: true, pushReg: true, pushTyreDays: 7, pushRegDays: [30, 7, 1] }, lsGet('si_prefs', {})),
+  prefs: Object.assign({ notifTyres: true, notifReg: true, pushTyres: true, pushReg: true, pushTyreDays: 7, pushRegDays: [30, 7, 1], cloudAuto: true }, lsGet('si_prefs', {})),
   lang: localStorage.getItem('lang') || 'hr',
   form: null, editingId: null, sform: null, dform: null, sheet: null, sheetData: {},
   appVersion: window.APP_VERSION, swVersion: '', remoteVersion: '', updateAvailable: false, updateDismissed: false, updateStatus: '', refreshing: false,
@@ -861,14 +877,22 @@ const Cloud = {
     if (this.saveSession(d)) { await this.afterLogin(); return 'in'; }
     return 'confirm';
   },
+  async sendOtp(email) {
+    await this.api('/auth/v1/otp', { method: 'POST', headers: this.headers(), body: JSON.stringify({ email, create_user: true }) });
+  },
+  async verifyOtp(email, token) {
+    const d = await this.api('/auth/v1/verify', { method: 'POST', headers: this.headers(), body: JSON.stringify({ email, token, type: 'email' }) });
+    this.saveSession(d); await this.afterLogin();
+  },
   recover(email) { return this.api('/auth/v1/recover?redirect_to=' + encodeURIComponent(APP_URL), { method: 'POST', headers: this.headers(), body: JSON.stringify({ email }) }); },
   async setPassword(pw) { const tok = await this.token(); await this.api('/auth/v1/user', { method: 'PUT', headers: this.headers(tok), body: JSON.stringify({ password: pw }) }); },
   logout(silent) {
     const tok = S.auth && S.auth.access_token;
     if (tok && !silent) fetch(SB_URL + '/auth/v1/logout', { method: 'POST', headers: this.headers(tok) }).catch(() => {});
-    S.auth = null; localStorage.removeItem('si_auth'); S.sync.state = ''; lsSet('si_sync', S.sync); render();
+    S.auth = null; localStorage.removeItem('si_auth'); S.sync.state = ''; lsSet('si_sync', S.sync); S.cloudRestored = false; S.cloudAuth = {}; render();
   },
   payload() { return { app: 'Servisni Intervali', version: 2, lang: S.lang, prefs: S.prefs, vehicles: S.vehicles }; },
+  hasRemoteData(r) { return !!(r && r.data && Array.isArray(r.data.vehicles) && r.data.vehicles.length); },
   async pull() {
     const tok = await this.token();
     const rows = await this.api('/rest/v1/si_backups?select=data,updated_at,app_version&user_id=eq.' + encodeURIComponent(S.auth.user_id), { headers: this.headers(tok) });
@@ -877,8 +901,13 @@ const Cloud = {
   async push() {
     if (!S.auth) return;
     clearTimeout(this.timer); this.timer = null;
-    S.sync.state = 'sync'; updateSyncUI();
     try {
+      if (!S.vehicles.length) {
+        const r = await this.pull();
+        if (this.hasRemoteData(r)) { await this.applyRemote(r); updateSyncUI(); render(); return; }
+        S.sync.state = 'ok'; S.sync.dirty = false; lsSet('si_sync', S.sync); updateSyncUI(); return;
+      }
+      S.sync.state = 'sync'; updateSyncUI();
       const tok = await this.token(); if (!tok) return;
       const now = new Date().toISOString();
       await this.api('/rest/v1/si_backups?on_conflict=user_id', { method: 'POST', headers: Object.assign(this.headers(tok), { Prefer: 'resolution=merge-duplicates,return=minimal' }), body: JSON.stringify({ user_id: S.auth.user_id, data: this.payload(), app_version: S.appVersion, device: (navigator.platform || '').slice(0, 40), updated_at: now }) });
@@ -886,7 +915,7 @@ const Cloud = {
     } catch (e) { S.sync.state = 'err'; S.sync.err = e.message; }
     lsSet('si_sync', S.sync); updateSyncUI();
   },
-  schedule() { if (!S.auth) return; clearTimeout(this.timer); this.timer = setTimeout(() => this.push(), 2500); },
+  schedule() { if (!S.auth || S.prefs.cloudAuto === false) return; clearTimeout(this.timer); this.timer = setTimeout(() => this.push(), 2500); },
   applyRemote(r) {
     S.vehicles = ((r.data && r.data.vehicles) || []).map(normalizeVehicle);
     if (r.data && r.data.prefs) { S.prefs = Object.assign(S.prefs, r.data.prefs); lsSet('si_prefs', S.prefs); }
@@ -896,21 +925,31 @@ const Cloud = {
   async afterLogin() {
     const r = await this.pull();
     const remote = r && r.data && Array.isArray(r.data.vehicles) ? r.data.vehicles : [];
-    if (r && remote.length) {
-      if (!S.vehicles.length) { await this.applyRemote(r); S.sheet = null; render(); toast('Podaci su vraćeni iz oblaka'); return; }
-      if (JSON.stringify(remote) === JSON.stringify(S.vehicles)) { S.sync = { lastSync: r.updated_at, dirty: false, state: 'ok' }; lsSet('si_sync', S.sync); S.sheet = null; render(); return; }
-      S.sheetData = { remote: r }; S.sheet = 'conflict'; render(); return;
+    S.sheet = null;
+    if (this.hasRemoteData(r)) {
+      if (!S.vehicles.length) { S.cloudRestored = true; await this.applyRemote(r); go('cloud'); toast('Podaci su vraćeni iz oblaka'); return; }
+      if (JSON.stringify(remote) === JSON.stringify(S.vehicles)) { S.sync = { lastSync: r.updated_at, dirty: false, state: 'ok' }; lsSet('si_sync', S.sync); go('cloud'); return; }
+      S.sheetData = { remote: r }; S.sheet = 'conflict'; go('cloud'); return;
     }
-    S.sheet = null; render(); await this.push();
+    if (S.vehicles.length) { go('cloud'); await this.push(); }
+    else { S.sync.state = 'ok'; S.sync.dirty = false; lsSet('si_sync', S.sync); go('cloud'); }
   },
   async startup() {
     if (!S.auth) return;
     try {
-      if (S.sync.dirty) { await this.push(); return; }
       const r = await this.pull();
-      if (r && r.updated_at && (!S.sync.lastSync || new Date(r.updated_at) > new Date(S.sync.lastSync))) { await this.applyRemote(r); render(); }
-      else if (!r) await this.push();
-      else { S.sync.state = 'ok'; updateSyncUI(); }
+      const remoteHas = this.hasRemoteData(r);
+      const localHas = S.vehicles.length > 0;
+      if (remoteHas && !localHas) { S.cloudRestored = true; await this.applyRemote(r); render(); return; }
+      if (!remoteHas && localHas) { await this.push(); return; }
+      if (!remoteHas && !localHas) { S.sync.state = 'ok'; S.sync.dirty = false; lsSet('si_sync', S.sync); updateSyncUI(); return; }
+      const same = JSON.stringify((r.data && r.data.vehicles) || []) === JSON.stringify(S.vehicles);
+      if (same) { S.sync = { lastSync: r.updated_at || S.sync.lastSync, dirty: false, state: 'ok' }; lsSet('si_sync', S.sync); updateSyncUI(); return; }
+      const remoteNewer = r.updated_at && (!S.sync.lastSync || new Date(r.updated_at) > new Date(S.sync.lastSync));
+      if (S.sync.dirty && remoteNewer) { S.sheetData = { remote: r }; S.sheet = 'conflict'; render(); return; }
+      if (S.sync.dirty) { await this.push(); return; }
+      if (remoteNewer) { await this.applyRemote(r); render(); return; }
+      S.sync.state = 'ok'; updateSyncUI();
     } catch (e) { S.sync.state = 'err'; S.sync.err = e.message; updateSyncUI(); }
   },
   handleRedirect() {
@@ -981,7 +1020,7 @@ async function checkForUpdate() {
 
 // ---------- Prikazi ----------
 function nav() {
-  const tab = ({ addService: 'services', history: 'services', services: 'services', documents: 'documents', addDocument: 'documents', settings: 'settings', notif: 'settings' })[S.view] || 'vehicles';
+  const tab = ({ addService: 'services', history: 'services', services: 'services', documents: 'documents', addDocument: 'documents', settings: 'settings', notif: 'settings', cloud: 'settings' })[S.view] || 'vehicles';
   const it = (k, view, icon, label) => `<button class="ni ${tab === k ? 'on' : ''}" data-a="tab" data-v="${view}" aria-label="${label}">${ic(icon, 1.9)}${label}</button>`;
   return `<div class="nav-pill">${it('vehicles', 'home', 'car', 'Vozila')}${it('services', 'services', 'wrench', 'Servisi')}${it('documents', 'documents', 'doc', 'Dokumenti')}${it('settings', 'settings', 'gear', 'Postavke')}</div>`;
 }
@@ -1507,12 +1546,77 @@ function vAddDocument() {
   h += `<div class="field"><label>Datoteka (slika ili PDF)</label><input type="file" accept="image/*,.pdf" data-a="docFile" class="inp" style="padding:8px">${f.file ? '<div class="ok" style="margin-top:4px">Datoteka je dodana</div>' : ''}</div></div>`;
   return h + `<button class="btn btn-primary" data-a="saveDoc">Spremi dokument</button>`;
 }
+function cloudCodeBoxes(code) {
+  const c = String(code || '').replace(/\D/g, '').slice(0, 6);
+  let h = '<div class="code-row" id="otpRow">';
+  for (let i = 0; i < 6; i++) h += `<input class="code-cell" inputmode="numeric" pattern="[0-9]*" maxlength="1" autocomplete="${i === 0 ? 'one-time-code' : 'off'}" data-i="${i}" value="${esc(c[i] || '')}" aria-label="Znamenka ${i + 1}">`;
+  return h + '</div>';
+}
+function vCloud() {
+  const a = S.cloudAuth || {};
+  let h = topbar('Postavke', null, 'goSettings') + titleRow('cloud', 'Oblak');
+  if (S.auth) {
+    const s = syncText();
+    const autoOn = S.prefs.cloudAuto !== false;
+    h += `<div class="title-sub">Isti podaci na svim tvojim mobitelima</div>`;
+    if (S.cloudRestored) {
+      h += `<div class="glass ok-banner"><div class="ok-ico">${ic('check', 2.2)}</div><b>Podaci su vraćeni</b><span>Na ovom mobitelu sada imaš ista vozila, servise i dokumente.</span></div>`;
+    }
+    h += `<div class="glass set-card"><div class="set-row"><div class="set-ico">${ic('cloud')}</div><div class="set-body"><b>Oblak</b><span>${autoOn ? 'Automatski backup uključen' : 'Automatski backup je ugašen'}</span></div><button class="tog ${autoOn ? 'on' : ''}" data-a="pref" data-v="cloudAuto" aria-label="Automatski backup"></button></div></div>`;
+    const pillCls = (S.sync.state === 'ok' && !S.sync.dirty && !s.cls) ? 'pill-ok' : ('pill-status ' + s.cls);
+    h += `<div class="glass info-list">`;
+    h += `<div class="ir"><div class="ic">${ic('clock')}</div><div style="flex:1"><div class="ik">Status</div><span id="syncPill" class="pill-status ${s.cls}${(S.sync.state === 'ok' && !S.sync.dirty) ? ' pill-ok' : ''}" style="margin-top:4px">${esc(s.t)}</span></div></div>`;
+    const last = S.sync.lastSync ? (function () { const d = new Date(S.sync.lastSync), same = d.toDateString() === new Date().toDateString(), hm = d.toLocaleTimeString('hr-HR', { hour: '2-digit', minute: '2-digit' }); return same ? 'danas, ' + hm : d.toLocaleDateString('hr-HR') + ', ' + hm; })() : '—';
+    h += `<div class="ir"><div class="ic">${ic('refresh')}</div><div style="flex:1"><div class="ik">Zadnja sinkronizacija</div><div class="iv" style="font-size:13.5px;font-weight:650">${esc(last)}</div></div></div>`;
+    h += `<div class="ir"><div class="ic">${ic('user')}</div><div style="flex:1;min-width:0"><div class="ik">Račun</div><div class="iv" style="font-size:13.5px;font-weight:650;overflow:hidden;text-overflow:ellipsis">${esc(S.auth.email || '—')}</div></div></div></div>`;
+    if (S.vehicles.length) {
+      h += `<div class="glass set-card">`;
+      S.vehicles.slice(0, 4).forEach(v => {
+        const n = (v.services || []).length;
+        h += `<div class="set-row"><div class="set-ico">${ic('car')}</div><div class="set-body"><b>${esc((v.brand || '') + ' ' + (v.model || ''))}</b><span>${v.plate ? esc(v.plate) + ' · ' : ''}${n} ${n === 1 ? 'servis' : 'servisa'}</span></div></div>`;
+      });
+      h += `</div>`;
+    }
+    h += `<div class="cloud-actions"><button class="btn btn-primary" data-a="syncNow">${ic('refresh')} Sinkroniziraj sada</button><button class="btn btn-ghost" data-a="logout">Odjava</button></div>`;
+    if (!S.cloudRestored) h += `<div class="hint-line" style="font-size:12px;color:#7c8ba1;padding:4px 4px 0;line-height:1.4">Ručni JSON backup i dalje možeš preuzeti u Postavkama.</div>`;
+    return h;
+  }
+  h += `<div class="title-sub">${a.sent ? 'Unesi e-mail, pa kod koji ti stigne u poštu. Lozinka nije potrebna.' : 'Prijavi se e-mailom – kod ti stigne u poštu. Isti podaci na više mobitela, bez lozinke.'}</div>`;
+  h += `<div class="glass" style="padding:12px;display:flex;flex-direction:column;gap:10px">`;
+  h += field('E-mail', `<input class="inp" id="aEmail" type="email" autocomplete="email" inputmode="email" value="${esc(a.email || '')}" placeholder="ime@primjer.hr">`);
+  if (a.sent) {
+    h += `<div class="mail-ok">Kod je poslan na ${esc(a.email)}. Vrijedi 10 minuta.</div>`;
+    h += `<div><label class="flabel">Kod iz e-maila</label>${cloudCodeBoxes(a.code)}</div>`;
+  }
+  if (a.showPass) {
+    h += field('Lozinka', `<input class="inp" id="aPass" type="password" autocomplete="current-password" placeholder="ako već imaš račun s lozinkom">`);
+  }
+  if (a.err) h += `<div class="err">${esc(a.err)}</div>`;
+  if (a.msg) h += `<div class="ok">${esc(a.msg)}</div>`;
+  h += `</div>`;
+  h += `<div class="cloud-actions">`;
+  if (a.sent && !a.showPass) {
+    h += `<button class="btn btn-primary" data-a="authVerify">${a.busy ? 'Pričekaj…' : 'Prijavi se i vrati podatke'}</button>`;
+    h += `<button class="btn btn-ghost" data-a="authSendOtp">${a.busy ? 'Pričekaj…' : 'Pošalji novi kod'}</button>`;
+  } else if (a.showPass) {
+    h += `<button class="btn btn-primary" data-a="authGo">${a.busy ? 'Pričekaj…' : 'Prijavi se lozinkom'}</button>`;
+    h += `<button class="btn btn-ghost" data-a="authForgot">Zaboravljena lozinka?</button>`;
+    h += `<button class="btn btn-ghost" data-a="authHidePass">Natrag na prijavu kodom</button>`;
+  } else {
+    h += `<button class="btn btn-primary" data-a="authSendOtp">${a.busy ? 'Pričekaj…' : 'Pošalji kod'}</button>`;
+  }
+  if (!a.showPass) h += `<button class="btn btn-ghost" data-a="authShowPass">Prijava lozinkom (stari račun)</button>`;
+  h += `</div>`;
+  h += `<div class="hint-line" style="font-size:12px;color:#7c8ba1;padding:4px 4px 0;line-height:1.4">Isti e-mail koristiš na svakom mobitelu. Ako već imaš račun s lozinkom, podaci ostaju na tom e-mailu.</div>`;
+  return h;
+}
+
 function vSettings() {
   const s = syncText(), chev = `<div class="chev">${ic('chev')}</div>`;
   const row = (act, icon, title, sub, right, extra) => `<button class="set-row" ${act ? `data-a="${act}"` : ''} ${extra || ''}><div class="set-ico">${ic(icon)}</div><div class="set-body"><b>${title}</b>${sub}</div>${right}</button>`;
-  let h = `<div class="hd"><h1>Postavke</h1></div>` + updateBanner();
+  let h = `<div class="hd"><h1>Postavke</h1></div>` + (location.pathname.indexOf('/test') !== -1 ? '<div class="test-badge">Testna verzija 1.7.0</div>' : '') + updateBanner();
   h += `<div class="glass set-card">`;
-  h += row('sheet', 'cloud', 'Cloud backup', `<span id="syncPill" class="pill-status ${s.cls}" style="margin-top:5px">${esc(s.t)}</span>`, chev, 'data-v="' + (S.auth ? 'account' : 'auth') + '"');
+  h += row('goCloud', 'cloud', 'Oblak', `<span id="syncPill" class="pill-status ${s.cls}" style="margin-top:5px">${esc(s.t)}</span>`, chev);
   h += row('downloadBackup', 'dl', 'Preuzmi backup', '<span>JSON datoteka na uređaj</span>', chev);
   h += `<div class="set-row"><div class="set-ico">${ic('ul')}</div><div class="set-body"><b>Vrati backup</b><span>Učitaj spremljenu datoteku</span></div>${chev}<input type="file" accept="application/json,.json" data-a="restore" aria-label="Vrati backup"></div>`;
   h += `</div><div class="glass set-card">`;
@@ -1543,6 +1647,12 @@ function sheetHTML() {
       <button class="btn btn-primary" data-a="authGo">${d.busy ? 'Pričekaj…' : mode === 'login' ? 'Prijavi se' : 'Napravi račun'}</button>
       ${mode === 'login' ? '<button class="btn btn-ghost" style="height:40px;font-size:14px" data-a="authForgot">Zaboravljena lozinka?</button>' : ''}
       ${d.forced ? '<button class="btn" style="height:36px;font-size:13.5px;color:#94a3b8" data-a="authLater">Kasnije (podsjetit ću te pri idućem otvaranju)</button>' : ''}</div>`;
+  }
+  if (sh === 'cloudHint') {
+    return `<div class="sheet">${head('cloud', 'Spremi u oblak', d.forced)}
+      <p>Prijavi se e-mailom da podatke ne izgubiš na novom mobitelu. Kod ti stigne u poštu – lozinka nije potrebna.</p>
+      <button class="btn btn-primary" data-a="goCloud">Prijavi se</button>
+      <button class="btn" style="height:36px;font-size:13.5px;color:#94a3b8" data-a="authLater">Kasnije</button></div>`;
   }
   if (sh === 'newpass') return `<div class="sheet">${head('user', 'Nova lozinka')}${field('Nova lozinka', '<input class="inp" id="aPass" type="password" autocomplete="new-password" placeholder="najmanje 6 znakova">')}${d.err ? `<div class="err">${esc(d.err)}</div>` : ''}<button class="btn btn-primary" data-a="setPass">Spremi lozinku</button></div>`;
   if (sh === 'account') {
@@ -1721,7 +1831,7 @@ function vNotif() {
   return h;
 }
 
-const VIEWS = { home: vHome, vehicle: vVehicle, tlak: vTlak, addVehicle: vAddVehicle, addService: vAddService, history: vHistory, services: vServices, documents: vDocuments, addDocument: vAddDocument, settings: vSettings, notif: vNotif };
+const VIEWS = { home: vHome, vehicle: vVehicle, tlak: vTlak, addVehicle: vAddVehicle, addService: vAddService, history: vHistory, services: vServices, documents: vDocuments, addDocument: vAddDocument, settings: vSettings, notif: vNotif, cloud: vCloud };
 function render() {
   const view = document.getElementById('view');
   view.className = S.view === 'tlak' ? 'fit' : '';
@@ -1832,20 +1942,70 @@ function restoreBackup(file) {
   };
   r.readAsText(file);
 }
+function authErr(m) {
+  m = String(m || '');
+  if (/invalid login|invalid.*credentials/i.test(m)) return 'Pogrešan e-mail ili lozinka.';
+  if (/otp_expired|token has expired|expired.*otp|invalid.*(otp|token|code)|code.*(invalid|expired)/i.test(m)) return 'Kod nije ispravan ili je istekao. Pošalji novi.';
+  if (/not confirmed/i.test(m)) return 'Email još nije potvrđen.';
+  if (/already registered|already exists|already been/i.test(m)) return 'Račun s tim e-mailom već postoji – prijavi se kodom ili lozinkom.';
+  if (/rate limit|too many|429/i.test(m)) return 'Previše pokušaja, pokušaj za nekoliko minuta.';
+  if (!navigator.onLine) return 'Nema interneta.';
+  return m;
+}
+function readCloudEmail() {
+  const el = document.getElementById('aEmail');
+  const email = ((el && el.value) || (S.cloudAuth && S.cloudAuth.email) || '').trim();
+  if (!S.cloudAuth) S.cloudAuth = {};
+  S.cloudAuth.email = email;
+  return email;
+}
+function readOtpCode() {
+  const boxes = document.querySelectorAll('#otpRow .code-cell');
+  let c = '';
+  if (boxes.length) boxes.forEach(b => { c += (b.value || '').replace(/\D/g, ''); });
+  else c = ((S.cloudAuth && S.cloudAuth.code) || '').replace(/\D/g, '');
+  S.cloudAuth = Object.assign({}, S.cloudAuth || {}, { code: c.slice(0, 6) });
+  return S.cloudAuth.code;
+}
+async function authSendOtp() {
+  readCloudEmail();
+  const a = S.cloudAuth;
+  const email = a.email; a.err = ''; a.msg = '';
+  if (!/^\S+@\S+\.\S+$/.test(email)) { a.err = 'Upiši ispravan e-mail.'; return render(); }
+  a.busy = true; render();
+  try {
+    await Cloud.sendOtp(email);
+    a.busy = false; a.sent = true; a.msg = ''; a.err = '';
+    render();
+    const first = document.querySelector('#otpRow .code-cell'); if (first) first.focus();
+  } catch (e) { a.busy = false; a.err = authErr(e.message); render(); }
+}
+async function authVerify() {
+  readCloudEmail();
+  const a = S.cloudAuth;
+  const email = a.email, code = readOtpCode(); a.err = ''; a.msg = '';
+  if (!/^\S+@\S+\.\S+$/.test(email)) { a.err = 'Upiši ispravan e-mail.'; return render(); }
+  if (code.length !== 6) { a.err = 'Unesi 6-znamenkasti kod iz e-maila.'; return render(); }
+  a.busy = true; render();
+  try { await Cloud.verifyOtp(email, code); toast('Prijavljen – backup je uključen'); }
+  catch (e) { a.busy = false; a.err = authErr(e.message); if (!S.auth) render(); }
+}
 async function authGo() {
-  const d = S.sheetData, email = (document.getElementById('aEmail').value || '').trim(), pw = document.getElementById('aPass').value || '';
+  const fromSheet = S.sheet === 'auth';
+  const d = fromSheet ? S.sheetData : (S.cloudAuth = Object.assign({}, S.cloudAuth || {}));
+  const email = ((document.getElementById('aEmail') && document.getElementById('aEmail').value) || d.email || '').trim();
+  const pwEl = document.getElementById('aPass'); const pw = (pwEl && pwEl.value) || '';
   d.email = email; d.err = ''; d.msg = '';
-  if (!/^\S+@\S+\.\S+$/.test(email)) { d.err = 'Upiši ispravan email.'; return render(); }
+  if (!/^\S+@\S+\.\S+$/.test(email)) { d.err = 'Upiši ispravan e-mail.'; return render(); }
   if (pw.length < 6) { d.err = 'Lozinka mora imati najmanje 6 znakova.'; return render(); }
   d.busy = true; render();
   try {
-    if ((d.mode || 'login') === 'login') { await Cloud.signIn(email, pw); toast('Prijavljen – backup je uključen'); }
-    else { const r = await Cloud.signUp(email, pw); if (r === 'confirm') { d.busy = false; d.mode = 'login'; d.msg = 'Poslali smo ti email. Potvrdi račun klikom na poveznicu, zatim se ovdje prijavi.'; render(); return; } toast('Račun je napravljen – backup je uključen'); }
-  } catch (e) {
-    d.busy = false; const m = String(e.message || '');
-    d.err = /invalid login/i.test(m) ? 'Pogrešan email ili lozinka.' : /not confirmed/i.test(m) ? 'Email još nije potvrđen – otvori poveznicu iz emaila.' : /already/i.test(m) ? 'Račun s tim emailom već postoji – prijavi se.' : /rate limit|too many/i.test(m) ? 'Previše pokušaja, pokušaj za nekoliko minuta.' : !navigator.onLine ? 'Nema interneta.' : m;
-    if (S.sheet === 'auth') render();
-  }
+    if (fromSheet && (d.mode || 'login') === 'signup') {
+      const r = await Cloud.signUp(email, pw);
+      if (r === 'confirm') { d.busy = false; d.mode = 'login'; d.msg = 'Poslali smo ti e-mail. Potvrdi račun, zatim se prijavi kodom ili lozinkom.'; render(); return; }
+      toast('Račun je napravljen – backup je uključen');
+    } else { await Cloud.signIn(email, pw); toast('Prijavljen – backup je uključen'); }
+  } catch (e) { d.busy = false; d.err = authErr(e.message); if (fromSheet || !S.auth) render(); }
 }
 
 // ---------- Događaji ----------
@@ -1903,6 +2063,11 @@ document.addEventListener('click', async (ev) => {
     case 'pref': S.prefs[v] = !S.prefs[v]; lsSet('si_prefs', S.prefs); persist(); render(); if (v === 'notifTyres' && S.prefs.notifTyres) requestTyreNotifPerm(); if (v === 'pushTyres' || v === 'pushReg') schedulePushSync(); break;
     case 'goNotif': go('notif'); break;
     case 'goSettings': go('settings'); break;
+    case 'goCloud': go('cloud'); break;
+    case 'authSendOtp': authSendOtp(); break;
+    case 'authVerify': authVerify(); break;
+    case 'authShowPass': S.cloudAuth = Object.assign({}, S.cloudAuth || {}, { showPass: true, err: '', msg: '', email: readCloudEmail() }); render(); break;
+    case 'authHidePass': S.cloudAuth = Object.assign({}, S.cloudAuth || {}, { showPass: false, err: '', msg: '', email: readCloudEmail() }); render(); break;
     case 'pushTyreDays': S.prefs.pushTyreDays = Number(v) || 7; lsSet('si_prefs', S.prefs); persist(); schedulePushSync(); render(); break;
     case 'pushRegDays': {
       const n = Number(v); let arr = Array.isArray(S.prefs.pushRegDays) ? S.prefs.pushRegDays.slice() : [30, 7, 1];
@@ -1921,12 +2086,12 @@ document.addEventListener('click', async (ev) => {
     case 'authMode': S.sheetData.email = (document.getElementById('aEmail') || {}).value || S.sheetData.email; S.sheetData.mode = v; S.sheetData.err = ''; S.sheetData.msg = ''; render(); break;
     case 'authGo': authGo(); break;
     case 'authLater': sessionStorage.setItem('si_auth_later', '1'); S.sheet = null; render(); break;
-    case 'authForgot': { const em = (document.getElementById('aEmail').value || '').trim(); S.sheetData.email = em; if (!em) { S.sheetData.err = 'Upiši email pa klikni ponovno.'; return render(); } try { await Cloud.recover(em); S.sheetData.err = ''; S.sheetData.msg = 'Poslali smo ti email za novu lozinku.'; } catch (e) { S.sheetData.err = e.message; } render(); break; }
+    case 'authForgot': { const d = S.sheet === 'auth' ? S.sheetData : (S.cloudAuth = Object.assign({}, S.cloudAuth || {})); const em = readCloudEmail() || ((document.getElementById('aEmail') && document.getElementById('aEmail').value) || '').trim(); d.email = em; if (!em) { d.err = 'Upiši e-mail pa klikni ponovno.'; return render(); } try { await Cloud.recover(em); d.err = ''; d.msg = 'Poslali smo ti e-mail za novu lozinku.'; } catch (e) { d.err = authErr(e.message); } render(); break; }
     case 'setPass': { const pw = document.getElementById('aPass').value || ''; if (pw.length < 6) { S.sheetData.err = 'Najmanje 6 znakova.'; return render(); } try { await Cloud.setPassword(pw); S.sheet = null; render(); toast('Lozinka je promijenjena'); } catch (e) { S.sheetData.err = e.message; render(); } break; }
-    case 'syncNow': await Cloud.push(); if (S.sync.state === 'ok') toast('Spremljeno u oblak'); break;
+    case 'syncNow': { const r = await Cloud.pull(); if (Cloud.hasRemoteData(r) && !S.vehicles.length) { S.cloudRestored = true; await Cloud.applyRemote(r); render(); toast('Podaci su vraćeni iz oblaka'); } else { await Cloud.push(); if (S.sync.state === 'ok') toast(S.vehicles.length ? 'Spremljeno u oblak' : 'Nema novih podataka za slanje'); } break; }
     case 'logout': if (confirm('Odjaviti se? Podaci ostaju na mobitelu, ali se više neće spremati u oblak.')) { Cloud.logout(); S.sheet = null; render(); } break;
-    case 'useRemote': await Cloud.applyRemote(S.sheetData.remote); S.selId = null; go('home'); toast('Podaci su vraćeni iz oblaka'); break;
-    case 'useLocal': S.sheet = null; render(); await Cloud.push(); break;
+    case 'useRemote': S.cloudRestored = true; await Cloud.applyRemote(S.sheetData.remote); S.selId = null; S.sheet = null; go('cloud'); toast('Podaci su vraćeni iz oblaka'); break;
+    case 'useLocal': { const rem = S.sheetData && S.sheetData.remote; if (!S.vehicles.length && Cloud.hasRemoteData(rem)) { S.cloudRestored = true; await Cloud.applyRemote(rem); S.sheet = null; go('cloud'); toast('Podaci su vraćeni iz oblaka'); } else { S.sheet = null; render(); await Cloud.push(); } break; }
   }
 });
 document.addEventListener('input', (ev) => {
@@ -1953,6 +2118,45 @@ document.addEventListener('change', (ev) => {
   if (a === 'restore' && el.files[0]) { restoreBackup(el.files[0]); el.value = ''; }
 });
 window.addEventListener('resize', () => { if (S.view === 'tlak') layoutTlak(); });
+document.addEventListener('input', (ev) => {
+  const el = ev.target;
+  if (!el || !el.classList || !el.classList.contains('code-cell')) return;
+  const i = Number(el.dataset.i);
+  let v = String(el.value || '').replace(/\D/g, '');
+  if (v.length > 1) {
+    const digits = v.slice(0, 6 - i);
+    const boxes = document.querySelectorAll('#otpRow .code-cell');
+    for (let k = 0; k < digits.length && i + k < boxes.length; k++) boxes[i + k].value = digits[k];
+    const next = boxes[Math.min(i + digits.length, boxes.length - 1)];
+    if (next) next.focus();
+  } else {
+    el.value = v.slice(-1);
+    if (el.value && i < 5) {
+      const next = document.querySelector('#otpRow .code-cell[data-i="' + (i + 1) + '"]');
+      if (next) next.focus();
+    }
+  }
+});
+document.addEventListener('keydown', (ev) => {
+  const el = ev.target;
+  if (!el || !el.classList || !el.classList.contains('code-cell')) return;
+  const i = Number(el.dataset.i);
+  if (ev.key === 'Backspace' && !(el.value || '') && i > 0) {
+    const prev = document.querySelector('#otpRow .code-cell[data-i="' + (i - 1) + '"]');
+    if (prev) { prev.focus(); prev.value = ''; ev.preventDefault(); }
+  }
+  if (ev.key === 'Enter') { ev.preventDefault(); authVerify(); }
+});
+document.addEventListener('paste', (ev) => {
+  const el = ev.target;
+  if (!el || !el.classList || !el.classList.contains('code-cell')) return;
+  ev.preventDefault();
+  const digits = ((ev.clipboardData && ev.clipboardData.getData('text')) || '').replace(/\D/g, '').slice(0, 6);
+  document.querySelectorAll('#otpRow .code-cell').forEach((b, i) => { b.value = digits[i] || ''; });
+  S.cloudAuth = Object.assign({}, S.cloudAuth || {}, { code: digits });
+  if (digits.length === 6) authVerify();
+});
+
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { fetchRemoteVersion(); if (S.auth) Cloud.startup(); checkTyreReminder(); } });
 window.addEventListener('online', () => { if (S.auth && S.sync.dirty) Cloud.push(); });
 
@@ -1969,7 +2173,7 @@ window.__SI_ready = (async function start() {
   else if (redirect && S.auth) Cloud.afterLogin().then(() => toast('Email potvrđen – backup je uključen')).catch(() => {});
   else if (S.auth) Cloud.startup();
   else if (!sessionStorage.getItem('si_auth_later') && !window.__SI_NO_AUTH_PROMPT) {
-    setTimeout(() => { if (!S.auth && !S.sheet) { S.sheet = 'auth'; S.sheetData = { forced: true, mode: 'login' }; render(); } }, 3300);
+    setTimeout(() => { if (!S.auth && !S.sheet && S.view !== 'cloud') { S.sheet = 'cloudHint'; S.sheetData = { forced: true }; render(); } }, 3300);
   }
 })();
 
