@@ -4,7 +4,7 @@ Privatna iPhone PWA za evidenciju vozila, servisa, dokumenata i podsjetnika za g
 
 **Live:** https://dadolinoo.github.io/servisni-intervali/
 
-Potpuno odvojeno od DH-Logix. Podaci su lokalni (localStorage); backup/restore je u Postavkama.
+Potpuno odvojeno od DH-Logix. Podaci su na uređaju, uz automatski backup u oblak (Prijava e-mailom i kodom u Postavkama) i ručni JSON backup.
 
 ## iPhone
 
